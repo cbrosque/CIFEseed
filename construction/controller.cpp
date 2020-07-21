@@ -1,11 +1,14 @@
 // This example application loads a URDF world file and simulates two robots
-// with physics and contact in a Dynamics3D virtual world. A graphics model of it is also shown using
+// with physics and contact in a Dynamics3D virtual world. A graphics model of it is also shown using 
 // Chai3D.
 
 #include "Sai2Model.h"
 #include "redis/RedisClient.h"
 #include "timer/LoopTimer.h"
-#include "Sai2Primitives.h"
+#include "tasks/JointTask.h"
+#include "tasks/PosOriTask.h"
+#include "haptic_tasks/HapticController.h"
+#include "haptic_tasks/BilateralPassivityController.h"
 
 #include <iostream>
 #include <string>
@@ -18,65 +21,214 @@ void sighandler(int sig)
 using namespace std;
 using namespace Eigen;
 
-const string robot_file = "./resources/mmp_panda.urdf";
+const vector<string> robot_files = {
+	"./resources/panda_arm.urdf",
+	"./resources/panda_arm.urdf",
+};
 
-#define A_SIDE_BASE_NAV       1
-#define A_SIDE_ELEV           2
-#define A_SIDE_BOTTOM         3
-#define A_SIDE_BOTTOM_THRU    4
-#define A_SIDE_TOP            5
-#define A_SIDE_TOP_THRU       6
-
-#define BASE_DROP			  7
-
-#define B_SIDE_BASE_NAV		  8
-#define B_SIDE_ELEV           9
-#define B_SIDE_BOTTOM         10
-#define B_SIDE_BOTTOM_THRU    11
-#define B_SIDE_TOP            12
-#define B_SIDE_TOP_THRU       13
-
-#define HOME                  14
-#define POSITION_HOLD         15
-
-
-int state = POSITION_HOLD;
-int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
-int pull_counter = 0; // counter to check if drill is going into our out of hole
-int drop_counter = 0; // Counter to check if arm is dropping after A-side, or after B-side
-
+const int n_robots = 2;
 
 // redis keys:
 // - read:
-std::string JOINT_ANGLES_KEY;
-std::string JOINT_VELOCITIES_KEY;
-std::string JOINT_TORQUES_SENSED_KEY;
-std::string CONTINUE_KEY;
+vector<string> JOINT_ANGLES_KEYS  = {
+	"sai2::cs225a::robot::panda1::sensors::q",
+	"sai2::cs225a::robot::panda2::sensors::q",
+};
+vector<string> JOINT_VELOCITIES_KEYS = {
+	"sai2::cs225a::robot::panda1::sensors::dq",
+	"sai2::cs225a::robot::panda2::sensors::dq",
+};
+vector<string> FORCE_SENSED_KEYS = {
+	"sai2::cs225a::robot::panda1::sensors::f_op",
+	"sai2::cs225a::robot::panda2::sensors::f_op",
+};
+
+const string REMOTE_ENABLED_KEY = "sai2::cs225a::robot::sensors::remote_enabled";
+const string RESTART_CYCLE_KEY = "sai2::cs225a::robot::sensors::restart_cycle";
+
 // - write
-std::string JOINT_TORQUES_COMMANDED_KEY;
+vector<string> JOINT_TORQUES_COMMANDED_KEYS = {
+	"sai2::cs225a::robot::panda1::actuators::fgc",
+	"sai2::cs225a::robot::panda2::actuators::fgc",
+};
 
 // - model
-std::string MASSMATRIX_KEY;
-std::string CORIOLIS_KEY;
-std::string ROBOT_GRAVITY_KEY;
+vector<string> MASSMATRIX_KEYS = 
+{
+	"sai2::cs225a::robot::panda1::model::mass_matrix",
+	"sai2::cs225a::robot::panda2::model::mass_matrix",
+};
 
-unsigned long long controller_counter = 0;
+vector<string> CORIOLIS_KEYS = 
+{
+	"sai2::cs225a::robot::panda1::model::coriolis",
+	"sai2::cs225a::robot::panda2::model::coriolis",	
+};
+
+vector<string> ROBOT_GRAVITY_KEYS = 
+{
+	"sai2::cs225a::robot::panda1::model::gravity",
+	"sai2::cs225a::robot::panda2::model::gravity",		
+};
+
+// - gripper
+vector<string> GRIPPER_MODE_KEYS = {   // m for move and g for graps
+	"sai2::cs225a::robot::panda1::gripper::mode",
+	"sai2::cs225a::robot::panda2::gripper::mode",
+};
+vector<string> GRIPPER_CURRENT_WIDTH_KEYS = {
+	"sai2::cs225a::robot::panda1::gripper::current_width",
+	"sai2::cs225a::robot::panda2::gripper::current_width",
+};
+vector<string> GRIPPER_DESIRED_WIDTH_KEYS = {
+	"sai2::cs225a::robot::panda1::gripper::desired_width",
+	"sai2::cs225a::robot::panda2::gripper::desired_width",
+};
+vector<string> GRIPPER_DESIRED_SPEED_KEYS = {
+	"sai2::cs225a::robot::panda1::gripper::desired_speed",
+	"sai2::cs225a::robot::panda2::gripper::desired_speed",
+};
+vector<string> GRIPPER_DESIRED_FORCE_KEYS = {
+	"sai2::cs225a::robot::panda1::gripper::desired_force",
+	"sai2::cs225a::robot::panda2::gripper::desired_force",
+};
+
+
+//// Haptic device related keys ////
+// Maximum stiffness, damping and force specifications
+vector<string> DEVICE_MAX_STIFFNESS_KEYS = {
+	"sai2::ChaiHapticDevice::device0::specifications::max_stiffness",
+	"sai2::ChaiHapticDevice::device1::specifications::max_stiffness",
+};
+vector<string> DEVICE_MAX_DAMPING_KEYS = {
+	"sai2::ChaiHapticDevice::device0::specifications::max_damping",
+	"sai2::ChaiHapticDevice::device1::specifications::max_damping",
+};
+vector<string> DEVICE_MAX_FORCE_KEYS = {
+	"sai2::ChaiHapticDevice::device0::specifications::max_force",
+	"sai2::ChaiHapticDevice::device1::specifications::max_force",
+};
+// Set force and torque feedback of the haptic device
+vector<string> DEVICE_COMMANDED_FORCE_KEYS = {
+	"sai2::ChaiHapticDevice::device0::actuators::commanded_force",
+	"sai2::ChaiHapticDevice::device1::actuators::commanded_force",
+};
+vector<string> DEVICE_COMMANDED_TORQUE_KEYS = {
+	"sai2::ChaiHapticDevice::device0::actuators::commanded_torque",
+	"sai2::ChaiHapticDevice::device1::actuators::commanded_torque",
+};
+vector<string> DEVICE_COMMANDED_GRIPPER_FORCE_KEYS = {
+	"sai2::ChaiHapticDevice::device0::actuators::commanded_force_gripper",
+	"sai2::ChaiHapticDevice::device1::actuators::commanded_force_gripper",
+};
+// Haptic device current position and rotation
+vector<string> DEVICE_POSITION_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::current_position",
+	"sai2::ChaiHapticDevice::device1::sensors::current_position",
+};
+vector<string> DEVICE_ROTATION_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::current_rotation",
+	"sai2::ChaiHapticDevice::device1::sensors::current_rotation",
+};
+vector<string> DEVICE_GRIPPER_POSITION_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::current_position_gripper",
+	"sai2::ChaiHapticDevice::device1::sensors::current_position_gripper",
+};
+// Haptic device current velocity
+vector<string> DEVICE_TRANS_VELOCITY_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::current_trans_velocity",
+	"sai2::ChaiHapticDevice::device1::sensors::current_trans_velocity",
+};
+vector<string> DEVICE_ROT_VELOCITY_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::current_rot_velocity",
+	"sai2::ChaiHapticDevice::device1::sensors::current_rot_velocity",
+};
+vector<string> DEVICE_GRIPPER_VELOCITY_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::current_gripper_velocity",
+	"sai2::ChaiHapticDevice::device1::sensors::current_gripper_velocity",
+};
+vector<string> DEVICE_SENSED_FORCE_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::sensed_force",
+	"sai2::ChaiHapticDevice::device1::sensors::sensed_force",
+};
+vector<string> DEVICE_SENSED_TORQUE_KEYS = {
+	"sai2::ChaiHapticDevice::device0::sensors::sensed_torque",
+	"sai2::ChaiHapticDevice::device1::sensors::sensed_torque",
+};
+
+// const bool flag_simulation = false;
+const bool flag_simulation = true;
 
 const bool inertia_regularization = true;
 
+#define GOTO_INITIAL_CONFIG               0
+#define HAPTIC_CONTROL                    1
+#define MAINTAIN_POSITION				  2
+
+int translation_counter = 0;
+
+int remote_enabled = 1; //////////////////////////////////////////////////////// Read from redis ??
+int restart_cycle = 0;
+
+vector<int> state = {
+	GOTO_INITIAL_CONFIG,
+	GOTO_INITIAL_CONFIG,
+};
+
+unsigned long long controller_counter = 0;
+
+RedisClient redis_client;
+
 int main() {
 
-	JOINT_ANGLES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::q";
-	JOINT_VELOCITIES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::dq";
-	JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda::actuators::fgc";
-	CONTINUE_KEY = "continue";
+
+	if(!flag_simulation)
+	{
+		JOINT_TORQUES_COMMANDED_KEYS[0] = "sai2::FrankaPanda::Clyde::actuators::fgc";
+		JOINT_ANGLES_KEYS[0]  = "sai2::FrankaPanda::Clyde::sensors::q";
+		JOINT_VELOCITIES_KEYS[0] = "sai2::FrankaPanda::Clyde::sensors::dq";
+		MASSMATRIX_KEYS[0] = "sai2::FrankaPanda::Clyde::sensors::model::massmatrix";
+		CORIOLIS_KEYS[0] = "sai2::FrankaPanda::Clyde::sensors::model::coriolis";
+		ROBOT_GRAVITY_KEYS[0] = "sai2::FrankaPanda::Clyde::sensors::model::robot_gravity";		
+		FORCE_SENSED_KEYS[0] = "sai2::ATIGamma_Sensor::Clyde::force_torque";
+	    GRIPPER_MODE_KEYS[0] = "sai2::FrankaPanda::Clyde::gripper::mode"; 
+	    GRIPPER_CURRENT_WIDTH_KEYS[0] = "sai2::FrankaPanda::Clyde::gripper::current_width";
+	    GRIPPER_DESIRED_WIDTH_KEYS[0] = "sai2::FrankaPanda::Clyde::gripper::desired_width";
+	    GRIPPER_DESIRED_SPEED_KEYS[0] = "sai2::FrankaPanda::Clyde::gripper::desired_speed";
+	    GRIPPER_DESIRED_FORCE_KEYS[0] = "sai2::FrankaPanda::Clyde::gripper::desired_force";  
 
 
-	// start redis client
+		JOINT_TORQUES_COMMANDED_KEYS[1] = "sai2::FrankaPanda::Bonnie::actuators::fgc";
+		JOINT_ANGLES_KEYS[1]  = "sai2::FrankaPanda::Bonnie::sensors::q";
+		JOINT_VELOCITIES_KEYS[1] = "sai2::FrankaPanda::Bonnie::sensors::dq";
+		MASSMATRIX_KEYS[1] = "sai2::FrankaPanda::Bonnie::sensors::model::massmatrix";
+		CORIOLIS_KEYS[1] = "sai2::FrankaPanda::Bonnie::sensors::model::coriolis";
+		ROBOT_GRAVITY_KEYS[1] = "sai2::FrankaPanda::Bonnie::sensors::model::robot_gravity";	
+		FORCE_SENSED_KEYS[1] = "sai2::ATIGamma_Sensor::Bonnie::force_torque";
+	    GRIPPER_MODE_KEYS[1] = "sai2::FrankaPanda::Bonnie::gripper::mode"; 
+	    GRIPPER_CURRENT_WIDTH_KEYS[1] = "sai2::FrankaPanda::Bonnie::gripper::current_width";
+	    GRIPPER_DESIRED_WIDTH_KEYS[1] = "sai2::FrankaPanda::Bonnie::gripper::desired_width";
+	    GRIPPER_DESIRED_SPEED_KEYS[1] = "sai2::FrankaPanda::Bonnie::gripper::desired_speed";
+	    GRIPPER_DESIRED_FORCE_KEYS[1] = "sai2::FrankaPanda::Bonnie::gripper::desired_force";  
+	}
+
+
+	// position of robots in world
+	vector<Affine3d> robot_pose_in_world;
+	Affine3d pose = Affine3d::Identity();
+	pose.translation() = Vector3d(0, -0.5, 0.0);
+	pose.linear() = AngleAxisd(0.3010693, Vector3d::UnitZ()).toRotationMatrix();
+	robot_pose_in_world.push_back(pose);
+
+	pose.translation() = Vector3d(-0.06, 0.57, 0.0);
+	pose.linear() = AngleAxisd(-1.0864675, Vector3d::UnitZ()).toRotationMatrix();
+	robot_pose_in_world.push_back(pose);
+
 	auto redis_client = RedisClient();
 	redis_client.connect();
 
-	redis_client.set(CONTINUE_KEY,"0");
+	redis_client.set(REMOTE_ENABLED_KEY, to_string(remote_enabled));
+	redis_client.set(RESTART_CYCLE_KEY, to_string(restart_cycle));
 
 	// set up signal handler
 	signal(SIGABRT, &sighandler);
@@ -84,505 +236,815 @@ int main() {
 	signal(SIGINT, &sighandler);
 
 	// load robots
-	auto robot = new Sai2Model::Sai2Model(robot_file, false);
-	robot->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEY);
-	VectorXd initial_q = robot->_q;
-	robot->updateModel();
+	vector<Sai2Model::Sai2Model*> robots;
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		robots.push_back(new Sai2Model::Sai2Model(robot_files[i], false));
+		robots[i]->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEYS[i]);
+		robots[i]->_dq = redis_client.getEigenMatrixJSON(JOINT_VELOCITIES_KEYS[i]);
+		robots[i]->updateModel();
+	}
 
-	// prepare controller
-	int dof = robot->dof();
-	VectorXd command_torques = VectorXd::Zero(dof);
-	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
+	// prepare robot task controllers
+	vector<int> dof;
+	vector<VectorXd> command_torques;
+	vector<VectorXd> coriolis;
+	vector<MatrixXd> N_prec;
 
-	/*** SET UP POSORI TASK***/
-	const string control_link = "linkTool";
-	const Vector3d control_point = Vector3d(0,0.104,0.203);
-	auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
+	vector<Sai2Primitives::JointTask*> joint_tasks;
+	vector<VectorXd> joint_task_torques;
+	vector<Sai2Primitives::PosOriTask*> posori_tasks;
+	vector<VectorXd> posori_task_torques;
+	vector<VectorXd> f_sensed;
 
-	#ifdef USING_OTG
-		posori_task->_use_interpolation_flag = true;
-	#else
-		posori_task->_use_velocity_saturation_flag = true;
-	#endif
+	vector<VectorXd> q_initial;
+	VectorXd q_init_1 = VectorXd::Zero(7);
+	VectorXd q_init_2 = VectorXd::Zero(7);
+	q_init_1 << -0.614944,0.73424,1.77881,-1.58219,0.689963,2.79649,1.0246;
+	q_init_2 << -1.30135,-1.21212,1.01617,-1.7539,-0.722107,1.33791,-0.199497;
 
-	posori_task->_linear_saturation_velocity = 0.05; // set new slower velocity (to help visualize)
+	q_initial.push_back(q_init_1);
+	q_initial.push_back(q_init_2);
 
-	// controller gains
-	VectorXd posori_task_torques = VectorXd::Zero(dof);
-	posori_task->_kp_pos = 200.0; // 200.0
-	posori_task->_kv_pos = 20.0; // 20.0
-	posori_task->_kp_ori = 200.0;
-	posori_task->_kv_ori = 20.0;
+	vector<string> link_names =
+	{
+		"link7",
+		"link7",
+	};
+	vector<Vector3d> pos_in_link = 
+	{
+		Vector3d(0.0, 0.0, 0.205),
+		Vector3d(0.150, 0.0, 0.157),
+	};
 
-	// controller desired positions
-	double tolerance = 0.001;
-	Vector3d x_des = Vector3d::Zero(3);
-	MatrixXd ori_des = Matrix3d::Zero();
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		dof.push_back(robots[i]->dof());
+		command_torques.push_back(VectorXd::Zero(dof[i]));
+		coriolis.push_back(VectorXd::Zero(dof[i]));
+		N_prec.push_back(MatrixXd::Identity(dof[i],dof[i]));
 
-	/*** SET UP JOINT TASK ***/
-	auto joint_task = new Sai2Primitives::JointTask(robot);
+		// joint tasks
+		joint_tasks.push_back(new Sai2Primitives::JointTask(robots[i]));
+		joint_task_torques.push_back(VectorXd::Zero(dof[i]));
 
-	#ifdef USING_OTG
-		joint_task->_use_interpolation_flag = true;
-	#else
-		joint_task->_use_velocity_saturation_flag = true;
-	#endif
-	joint_task->_saturation_velocity << M_PI/6, M_PI/6, M_PI/6; // set new slower velocity (to help visualize)
+		joint_tasks[i]->_kp = 100.0;
+		joint_tasks[i]->_kv = 14.0;
+		joint_tasks[i]->_ki = 50.0;
+
+		joint_tasks[i]->_desired_position = q_initial[i];
+		joint_tasks[i]->_otg->setMaxVelocity(M_PI/6);
+
+		// end effector tasks
+		posori_tasks.push_back(new Sai2Primitives::PosOriTask(robots[i], link_names[i], pos_in_link[i]));
+
+		Affine3d sensor_frame = Affine3d::Identity();
+		sensor_frame.translation() = Vector3d(0, 0, 0.12);
+		posori_tasks[i]->setForceSensorFrame(link_names[i], sensor_frame);
+
+		posori_task_torques.push_back(VectorXd::Zero(dof[i]));
+		posori_tasks[i]->_use_interpolation_flag = false;
+		posori_tasks[i]->_use_velocity_saturation_flag = true;
+		posori_tasks[i]->_linear_saturation_velocity = 0.7;
+		posori_tasks[i]->_angular_saturation_velocity = M_PI/1.5;
+
+		posori_tasks[i]->_kp_pos = 200.0;
+		posori_tasks[i]->_kv_pos = 15.0;
+		posori_tasks[i]->_kp_ori = 200.0;
+		posori_tasks[i]->_kv_ori = 15.0;	
+
+		f_sensed.push_back(VectorXd::Zero(6));	
+	}
 
 
-	// controller gains
-	VectorXd joint_task_torques = VectorXd::Zero(dof);
-	joint_task->_kp = 250.0;
-	joint_task->_kv = 15.0;
+	////Haptic teleoperation controller ////
+	//Left hand with gripper : Robot[0] && Right hand with wrench : Robot[1]
+	// teleoperation tasks
+	vector<Vector3d> workspace_centers;
+	vector<Vector3d> haptic_centers;
 
-	// controller desired angles
-	VectorXd q_des = VectorXd::Zero(dof);
-	q_des = robot->_q;
+	vector<Sai2Primitives::HapticController*> teleop_tasks;
 
-	/*** BEGIN LOOP ***/
+	vector<bool> gripper_state;
+	vector<bool> previous_gripper_state;
+
+	redis_client.set(GRIPPER_DESIRED_WIDTH_KEYS[0], "0.05");
+	redis_client.set(GRIPPER_DESIRED_SPEED_KEYS[0], "0.07");
+	redis_client.set(GRIPPER_DESIRED_FORCE_KEYS[0], "50.0");
+	bool close_gripper = true;
+	string gripper_mode_to_write = "m";
+
+	// passivity
+	vector<Sai2Primitives::BilateralPassivityController*> passivity_controllers;
+	vector<Vector3d> passivity_damping_force;
+	vector<Vector3d> haptic_force_plus_passivity;
+
+	// ee_inertial_forces
+	vector<Vector3d> ee_velocity;
+	vector<Vector3d> prev_ee_velocity;
+	vector<Vector3d> ee_acceleration;
+	vector<Vector3d> ee_inertial_forces;	
+
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		// haptic task
+		workspace_centers.push_back(posori_tasks[i]->_current_position);
+		haptic_centers.push_back(Vector3d::Zero());
+
+		teleop_tasks.push_back(new Sai2Primitives::HapticController(posori_tasks[i]->_current_position, posori_tasks[i]->_current_orientation, robot_pose_in_world[i].linear()));
+
+		// Task scaling factors
+		double Ks = 2.0;
+		double KsR = 1.0;
+		teleop_tasks[i]->setScalingFactors(Ks, KsR);
+
+		// max stiffnesses
+		Vector2d max_stiffness = redis_client.getEigenMatrixJSON(DEVICE_MAX_STIFFNESS_KEYS[i]);
+		Vector2d max_damping = redis_client.getEigenMatrixJSON(DEVICE_MAX_DAMPING_KEYS[i]);
+		Vector2d max_force = redis_client.getEigenMatrixJSON(DEVICE_MAX_FORCE_KEYS[i]);
+
+		teleop_tasks[i]->_max_linear_stiffness_device = max_stiffness(0);
+		teleop_tasks[i]->_max_angular_stiffness_device = max_stiffness(1);
+		teleop_tasks[i]->_max_linear_damping_device = max_damping(0);
+		teleop_tasks[i]->_max_angular_damping_device = max_damping(1);
+		teleop_tasks[i]->_max_force_device = max_force(0);
+		teleop_tasks[i]->_max_torque_device = max_force(1);
+
+		// gripper state
+		gripper_state.push_back(false);
+		previous_gripper_state.push_back(false);
+
+		// passivity controller		
+		passivity_controllers.push_back(new Sai2Primitives::BilateralPassivityController(posori_tasks[i], teleop_tasks[i]));
+		passivity_damping_force.push_back(Vector3d::Zero());
+		haptic_force_plus_passivity.push_back(Vector3d::Zero());
+
+		// ee_inertial_forces
+		ee_velocity.push_back(Vector3d::Zero());
+		prev_ee_velocity.push_back(Vector3d::Zero());
+		ee_acceleration.push_back(Vector3d::Zero());
+		ee_inertial_forces.push_back(Vector3d::Zero());
+	}
+
+	// set force feedback for tasks
+	teleop_tasks[0]->_send_haptic_feedback = false;
+
+	teleop_tasks[1]->_send_haptic_feedback = true;
+	teleop_tasks[1]->_haptic_feedback_from_proxy = false;
+	teleop_tasks[1]->_filter_on = true;
+	teleop_tasks[1]->setFilterCutOffFreq(0.01, 0.04);
+
+	teleop_tasks[1]->setReductionFactorForceFeedback(0.6 * Matrix3d::Identity(), 1.0/20.0 * Matrix3d::Identity());
+
+	// force sensor bias and end effector mass properties
+	vector<VectorXd> force_sensor_bias;
+	vector<VectorXd> bias_adjustment;
+	vector<double> ee_mass;
+	vector<Vector3d> ee_com_in_sensor_frame;
+
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		force_sensor_bias.push_back(VectorXd::Zero(6));
+		bias_adjustment.push_back(VectorXd::Zero(6));
+		ee_mass.push_back(0);
+		ee_com_in_sensor_frame.push_back(Vector3d::Zero());
+	}
+
+	if(!flag_simulation)
+	{
+		// bias_adjustment[1] << 0.3, 0.7, 0, 0, 0, 0;
+
+		force_sensor_bias[1] << 0.0123722,    0.53762,    12.8745, -0.0954857,  0.0700738,  0.0273654;
+		ee_mass[1] =  0.273239;
+		ee_com_in_sensor_frame[1] = Vector3d(0.0304551, -0.000486021,   0.00367133);
+	}
+
+	// setup redis keys to be updated with the callback
+	// objects to read from redis
+	vector<MatrixXd> mass_from_robots;
+	vector<VectorXd> coriolis_from_robots;
+
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		mass_from_robots.push_back(MatrixXd::Identity(7,7));
+		coriolis_from_robots.push_back(VectorXd::Zero(7));
+	}
+
+	redis_client.createReadCallback(0);
+	redis_client.createWriteCallback(0);
+
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		// read
+		redis_client.addEigenToReadCallback(0, JOINT_ANGLES_KEYS[i], robots[i]->_q);
+		redis_client.addEigenToReadCallback(0, JOINT_VELOCITIES_KEYS[i], robots[i]->_dq);
+		
+		redis_client.addEigenToReadCallback(0, DEVICE_POSITION_KEYS[i], teleop_tasks[i]->_current_position_device);
+		redis_client.addEigenToReadCallback(0, DEVICE_ROTATION_KEYS[i], teleop_tasks[i]->_current_rotation_device);
+		redis_client.addEigenToReadCallback(0, DEVICE_TRANS_VELOCITY_KEYS[i], teleop_tasks[i]->_current_trans_velocity_device);
+		redis_client.addEigenToReadCallback(0, DEVICE_ROT_VELOCITY_KEYS[i], teleop_tasks[i]->_current_rot_velocity_device);
+		redis_client.addEigenToReadCallback(0, DEVICE_SENSED_FORCE_KEYS[i], teleop_tasks[i]->_sensed_force_device);
+		redis_client.addEigenToReadCallback(0, DEVICE_SENSED_TORQUE_KEYS[i], teleop_tasks[i]->_sensed_torque_device);
+		redis_client.addDoubleToReadCallback(0, DEVICE_GRIPPER_POSITION_KEYS[i], teleop_tasks[i]->_current_position_gripper_device);
+		redis_client.addDoubleToReadCallback(0, DEVICE_GRIPPER_VELOCITY_KEYS[i], teleop_tasks[i]->_current_gripper_velocity_device);
+
+		if(!flag_simulation)
+		{
+			redis_client.addEigenToReadCallback(0, MASSMATRIX_KEYS[i], mass_from_robots[i]);
+			redis_client.addEigenToReadCallback(0, CORIOLIS_KEYS[i], coriolis_from_robots[i]);
+		}
+
+		// write
+		redis_client.addEigenToWriteCallback(0, JOINT_TORQUES_COMMANDED_KEYS[i], command_torques[i]);
+		redis_client.addEigenToWriteCallback(0, DEVICE_COMMANDED_FORCE_KEYS[i], haptic_force_plus_passivity[i]);
+		redis_client.addDoubleToWriteCallback(0, DEVICE_COMMANDED_GRIPPER_FORCE_KEYS[i], teleop_tasks[i]->_commanded_gripper_force_device);
+	}
+
+	// redis_client.addEigenToReadCallback(0, FORCE_SENSED_KEYS[0], f_sensed[0]);
+	redis_client.addEigenToReadCallback(0, FORCE_SENSED_KEYS[1], f_sensed[1]);
+
+	redis_client.addIntToReadCallback(0, REMOTE_ENABLED_KEY, remote_enabled);
+	redis_client.addIntToReadCallback(0, RESTART_CYCLE_KEY, restart_cycle);
+
+	redis_client.addStringToWriteCallback(0, GRIPPER_MODE_KEYS[0], gripper_mode_to_write);
+
 	// create a timer
 	LoopTimer timer;
 	timer.initializeTimer();
-	timer.setLoopFrequency(1000);
-	double start_time = timer.elapsedTime(); //secs
+	timer.setLoopFrequency(1000); 
+	double current_time = 0;
+	double prev_time = 0;
+	double dt = 0;
 	bool fTimerDidSleep = true;
-
-	// trajectory points
-	MatrixXd cl = MatrixXd::Zero(3,6); // column locations
-	cl.row(0) << 0.035 , -2.465, -4.965, -4.965, -2.465,  0.035; // x location of column
-	cl.row(1) << 2.20 , 2.20, 2.20, -2.50, -2.50, -2.50  ; // y location of column
-	cl.row(2) << M_PI/2. , M_PI/2., M_PI/2., -M_PI/2. , -M_PI/2., -M_PI/2.; // direction of holes
-
-	int cc = 0; // current column
-
-	// trajectory orientations
-	MatrixXd right_ori = MatrixXd::Zero(3,6);
-	MatrixXd left_ori = MatrixXd::Zero(3,6);
-
-	right_ori.row(0) << M_PI, M_PI, M_PI, 0.0, 0.0, 0.0;
-	right_ori.row(1) << -0.5*M_PI, -0.5*M_PI, -0.5*M_PI, 0.5*M_PI, 0.5*M_PI, 0.5*M_PI;
-	right_ori.row(2) << M_PI, M_PI, M_PI, M_PI, M_PI, M_PI;
-
-	left_ori.row(0) << 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-	left_ori.row(1) << 0.5*M_PI, 0.5*M_PI, 0.5*M_PI, -0.5*M_PI, -0.5*M_PI, -0.5*M_PI;
-	left_ori.row(2) << 0.0, 0.0, 0.0, M_PI, M_PI, M_PI;
-
-
-	// building column parameters
-	float base_front_offset = 0.55;
-	float base_side_offset = 0.17;
-	float tool_midpoint_offset = 0.27;
-
-	// hole parameters
-	float bottom_hole_height = 2.3;
-	float top_hole_height = 2.56;
-	float hole_side_offset = 0.06;
-	float drill_depth = 0.05;
+	double start_time = timer.elapsedTime(); //secs
 
 	while (runloop) {
 		// wait for next scheduled loop
 		timer.waitForNextLoop();
-		double time = timer.elapsedTime() - start_time;
+		current_time = timer.elapsedTime() - start_time;
+		dt = current_time - prev_time;
 
-		// read robot state from redis
-		robot->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEY);
-		robot->_dq = redis_client.getEigenMatrixJSON(JOINT_VELOCITIES_KEY);
+		redis_client.executeReadCallback(0);
 
-		// update model
-		robot->updateModel();
-
-		if(controller_counter % 200 == 0) // %1000
+		// read robot state from redis and update robot model
+		for(int i=0 ; i<n_robots ; i++)
 		{
-			cout << "current state: " << state << "\n";
-			cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
-			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
-			cout << "arm joint angles:" << robot->_q(4) << " " << robot->_q(5) << " " << robot->_q(6) << " " <<
-										robot->_q(7) << " " << robot->_q(8) << " " << robot->_q(9) << " " << robot->_q(10) << endl;
-			cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
-			cout << endl;
-			// cout << "counter: " << controller_counter << "\n";
-		}
-
-		// state switching
-		if(state == HOME){
-			// Set desired task position
-			q_des << initial_q;
-
-		}
-
-		else if(state == POSITION_HOLD){
-			// Set desired task position
-			q_des(3) = initial_q(3);
-			q_des(4) = initial_q(4);
-			q_des(5) = initial_q(5);
-			q_des(6) = initial_q(6);
-			q_des(7) = initial_q(7);
-			q_des(8) = initial_q(8);
-			q_des(9) = initial_q(9);
-			q_des(10) = initial_q(10);
-
-			// Set desired orientation
-			cout << '\n' << "in a new terminal run 'redis-cli' then 'set continue 1' to move on to column "<< cc+1 << "\n";
-			int continue_result = 0;
-			continue_result = stoi(redis_client.get(CONTINUE_KEY));
-
-			if (continue_result == 1)
+			// update model
+			if(flag_simulation)
 			{
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-				state = A_SIDE_BASE_NAV; // advance to next state
+				robots[i]->updateModel();
+				robots[i]->coriolisForce(coriolis[i]);
+			}
+			else
+			{
+				robots[i]->updateKinematics();
+				robots[i]->_M = mass_from_robots[i];
+				if(inertia_regularization)
+				{
+					robots[i]->_M(4,4) += 0.07;
+					robots[i]->_M(5,5) += 0.07;
+					robots[i]->_M(6,6) += 0.07;
+				}
+				robots[i]->_M_inv = robots[i]->_M.inverse();
+				coriolis[i] = coriolis_from_robots[i];
 			}
 
 		}
 
-		else if(state == A_SIDE_BASE_NAV){
-			// Set desired task position
-			q_des << initial_q;
-			// q_des(0) = 0.2;
-			// q_des(1) = 1.65;
-			// q_des(2) = 0.0;
-			q_des(0) = cl.coeff(0,cc) + base_side_offset*cos(cl.coeff(2,cc) - M_PI/2.) + base_front_offset*cos(cl.coeff(2,cc) + M_PI);
-			q_des(1) = cl.coeff(1,cc) + base_side_offset*sin(cl.coeff(2,cc) - M_PI/2.) + base_front_offset*sin(cl.coeff(2,cc) + M_PI);
-			q_des(2) = cl.coeff(2,cc) - M_PI/2.;
-
-			// Set desired orientation
-			ori_des.setIdentity();
-
-			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-				q_des << robot->_q; // set desired joint angles
-
-				state = A_SIDE_ELEV; // advance to next state
+		// compute hand inertial forces (only for second robot)
+		for(int i=1 ; i<n_robots ; i++)
+		{
+			ee_velocity[i] = posori_tasks[i]->_current_velocity + posori_tasks[i]->_current_angular_velocity.cross(ee_com_in_sensor_frame[i]);
+			if(controller_counter > 100)
+			{
+				ee_acceleration[i] = (ee_velocity[i] - prev_ee_velocity[i])/dt;
 			}
-
+			prev_ee_velocity[i] = ee_velocity[i];
+			ee_inertial_forces[i] = ee_mass[i] * ee_acceleration[i];
 		}
 
-		else if(state == A_SIDE_ELEV){ //
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//x_des << 0.30, 2.2, 2.3;
-			x_des(0) = cl.coeff(0,cc) + tool_midpoint_offset*cos(cl.coeff(2,cc) - M_PI/2.);
-			x_des(1) = cl.coeff(1,cc) + tool_midpoint_offset*sin(cl.coeff(2,cc) - M_PI/2.);
-			x_des(2) = bottom_hole_height;
-			// Set desired orientation
-			ori_des = (AngleAxisd(right_ori.coeff(0,cc), Vector3d::UnitX())
-					 * AngleAxisd(right_ori.coeff(1,cc),  Vector3d::UnitY())
-					 * AngleAxisd(right_ori.coeff(2,cc), Vector3d::UnitZ())).toRotationMatrix();
 
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
+		// read force sensor data and remove bias and effecto from hand gravity (only for second robot)
+		for(int i=1 ; i<n_robots ; i++)
+		{
+			f_sensed[i] -= force_sensor_bias[i] + bias_adjustment[i]; 
+			Matrix3d R_sensor = Matrix3d::Identity();
+			robots[i]->rotation(R_sensor, "link7");
+			Vector3d p_tool_sensorFrame = ee_mass[i] * R_sensor.transpose() * Vector3d(0,0,-9.81); 
+			f_sensed[i].head(3) += p_tool_sensorFrame;
+			f_sensed[i].tail(3) += ee_com_in_sensor_frame[i].cross(p_tool_sensorFrame);
 
-				// Advanced to the correct state depending if you are on your way up or down from holes
-				if(elev_counter == 0){
-					state = A_SIDE_BOTTOM;
-					elev_counter = 1;
-				}
-				else{
-					state = BASE_DROP;
-					elev_counter = 0;
-				}
-			}
+			// f_sensed[i].head(3) -= 0.85 * R_sensor.transpose() * ee_inertial_forces[i];
+
+			posori_tasks[i]->updateSensedForceAndMoment(f_sensed[i].head(3), f_sensed[i].tail(3));
+			VectorXd sensed_force_world_frame = VectorXd::Zero(6);
+			sensed_force_world_frame << posori_tasks[i]->_sensed_force, posori_tasks[i]->_sensed_moment;
+			teleop_tasks[i]->updateSensedForce(-sensed_force_world_frame);
 		}
 
-		else if(state == A_SIDE_BOTTOM){
 
-			// Set desired task position
-			//x_des << 0.09, 2.2, 2.3;
-			x_des(0) = cl.coeff(0,cc) + hole_side_offset*cos(cl.coeff(2,cc) - M_PI/2.);
-			x_des(1) = cl.coeff(1,cc) + hole_side_offset*sin(cl.coeff(2,cc) - M_PI/2.);
-			x_des(2) = bottom_hole_height;
-			// Desired orientation same as before
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){ //position of tool tip
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				// Advanced to the correct state depending if you are going into or pulling out of hole
-				if(pull_counter == 0){
-					state = A_SIDE_BOTTOM_THRU; // arrived to hole surface and proceeding to go in
-					pull_counter = 1;
-				}
-				else{
-					state = A_SIDE_TOP; // just exited hole and moving to next hole
-					pull_counter = 0;
-				}
-			}
+		// use gripper as switche
+		for(int i=0 ; i<n_robots ; i++)
+		{
+			teleop_tasks[i]->UseGripperAsSwitch();
+			gripper_state[i] = teleop_tasks[i]->gripper_state;
 		}
 
-		else if(state == A_SIDE_BOTTOM_THRU){
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//x_des << 0.09, 2.26, 2.3;
-			x_des(0) = cl.coeff(0,cc) + hole_side_offset*cos(cl.coeff(2,cc) - M_PI/2.) - drill_depth*cos(cl.coeff(2,cc) + M_PI);
-			x_des(1) = cl.coeff(1,cc) + hole_side_offset*sin(cl.coeff(2,cc) - M_PI/2.) - drill_depth*sin(cl.coeff(2,cc) + M_PI);;
-			x_des(2) = bottom_hole_height;
-			// Desired orientation same as before
+///////////////////////////////////////////////////////////////////////////////////////////
+		//// State Machine ////
+// 
+		// 	same for both hands if state is goto init config or maintain position
+		for(int i=0 ; i<n_robots ; i++)
+		{
+			if(state[i] == GOTO_INITIAL_CONFIG)
+			{
+				// update robot home position task model
+				N_prec[i].setIdentity();
+				joint_tasks[i]->updateTaskModel(N_prec[i]);
+				// compute robot torques
+				joint_tasks[i]->computeTorques(joint_task_torques[i]);
+				command_torques[i] = joint_task_torques[i] + coriolis[i];
+				
+				// compute homing haptic device
+				teleop_tasks[i]->HomingTask();
 
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
+				if(remote_enabled==1 && (joint_tasks[i]->_desired_position - joint_tasks[i]->_current_position).norm() < 0.2 && teleop_tasks[i]->device_homed && gripper_state[i])
+				{
+					joint_tasks[i]->_ki = 0;
+					posori_tasks[i]->reInitializeTask();
+					workspace_centers[i] = posori_tasks[i]->_current_position;
+					haptic_centers[i] = teleop_tasks[i]->_current_position_device;
 
-				state = A_SIDE_BOTTOM; // advance to next state
-			}
-		}
-
-		else if(state == A_SIDE_TOP){
-			// x_des << 0.09, 2.2, 2.56;
-			x_des(0) = cl.coeff(0,cc) + 0.06*cos(cl.coeff(2,cc) - M_PI/2.);
-			x_des(1) = cl.coeff(1,cc) + 0.06*sin(cl.coeff(2,cc) - M_PI/2.);
-			x_des(2) = top_hole_height;
-			// Desired orientation same as before
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				// Advanced to the correct state depending if you are going into or pulling out of hole
-				if(pull_counter == 0){
-					state = A_SIDE_TOP_THRU; // arrived to hole surface and proceeding to go in
-					pull_counter = 1;
+					teleop_tasks[i]->setRobotCenter(workspace_centers[i], posori_tasks[i]->_current_orientation);
+					teleop_tasks[i]->setDeviceCenter(haptic_centers[i], teleop_tasks[i]->_current_rotation_device);
+					
+					state[i] = HAPTIC_CONTROL;
 				}
-				else{
-					state = A_SIDE_ELEV; // just exited hole and moving to descend
-					pull_counter = 0;
+			}
+
+			else if(state[i] == MAINTAIN_POSITION)
+			{
+				// update robot home position task model
+				N_prec[i].setIdentity();
+				joint_tasks[i]->updateTaskModel(N_prec[i]);
+				// compute robot torques
+				joint_tasks[i]->computeTorques(joint_task_torques[i]);
+				command_torques[i] = joint_task_torques[i] + coriolis[i];
+
+				// compute homing haptic device
+				teleop_tasks[i]->HomingTask();
+
+				if (remote_enabled==1 && gripper_state[i])
+				{
+					posori_tasks[i]->reInitializeTask();
+
+					teleop_tasks[i]->setRobotCenter(workspace_centers[i], posori_tasks[i]->_current_orientation);
+					teleop_tasks[i]->setDeviceCenter(haptic_centers[i], teleop_tasks[i]->_current_rotation_device);
+					
+					state[i] = HAPTIC_CONTROL;
+				}
+				else if (restart_cycle == 1)
+				{
+					// set joint controller to robot home position
+					joint_tasks[i]->reInitializeTask();
+					joint_tasks[i]->_desired_position = q_initial[i];
+					// set haptic device home position
+					teleop_tasks[i]->setDeviceCenter(haptic_centers[i], teleop_tasks[i]->_current_rotation_device);
+
+					state[i] = GOTO_INITIAL_CONFIG;
 				}
 			}
 		}
 
-		else if(state == A_SIDE_TOP_THRU){
-			// x_des << 0.09, 2.26, 2.56;
-			x_des(0) = cl.coeff(0,cc) + hole_side_offset*cos(cl.coeff(2,cc) - M_PI/2.) - drill_depth*cos(cl.coeff(2,cc) + M_PI);
-			x_des(1) = cl.coeff(1,cc) + hole_side_offset*sin(cl.coeff(2,cc) - M_PI/2.) - drill_depth*sin(cl.coeff(2,cc) + M_PI);;
-			x_des(2) = top_hole_height;
-			// Desired orientation same as before
+		if(state[0] == HAPTIC_CONTROL)
+		{
+			// update tasks model
+			N_prec[0].setIdentity();
+			posori_tasks[0]->updateTaskModel(N_prec[0]);
+			N_prec[0] = posori_tasks[0]->_N;
+			joint_tasks[0]->updateTaskModel(N_prec[0]);
 
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
+			//compute haptic commands (only position control) - without force feedback (force_sensed=0)
+			teleop_tasks[0]->computeHapticCommands3d(posori_tasks[0]->_desired_position);
 
-				state = A_SIDE_TOP; // advance to next state
-			}
-		}
+			// compute robot set torques
+			posori_tasks[0]->computeTorques(posori_task_torques[0]);
+			joint_tasks[0]->computeTorques(joint_task_torques[0]);
 
-		else if(state == BASE_DROP){
-			//q_des << robot->_q; // set desired joint
-			q_des(3) = 1.2;
-			// Set desired orientation
-			ori_des.setIdentity();
+			command_torques[0] = joint_task_torques[0] + coriolis[0] + posori_task_torques[0];
 
-			if((robot->_q - q_des).norm() < tolerance){ // check if end effector has hit wall and stopped advancing, maybe set counter
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
+			if(gripper_state[0] && !previous_gripper_state[0])
+			{
+				if(close_gripper)
+				{
 
-				// Advanced to the correct state depending if you are going from A-side to B-side, or finished the beam
-				if(drop_counter == 0){
-					state = B_SIDE_BASE_NAV;
-					drop_counter = 1;
-				}
-				else{
-					drop_counter = 0;
-					cc++;
-					if ((cc+1) <= cl.cols())
+					redis_client.set(GRIPPER_DESIRED_WIDTH_KEYS[0], "0.00");
+					if(!flag_simulation)
 					{
-						q_des << robot->_q;
-						state = POSITION_HOLD; // stay at BASE_DROP state after finishing
+						gripper_mode_to_write = "g";
 					}
-					else
+				}
+				else
+				{
+					redis_client.set(GRIPPER_DESIRED_WIDTH_KEYS[0], "0.04");
+					if(!flag_simulation)
 					{
-						state = HOME; // stay at BASE_DROP state after finishing
+						gripper_mode_to_write = "m";
 					}
-
 				}
 			}
-		}
-
-		else if(state == B_SIDE_BASE_NAV){
-			// Set desired task position
-			//q_des << initial_q;
-			//q_des(0) = -0.15;
-			//q_des(1) = 1.65;
-			//q_des(2) = 0.0;
-			q_des(0) = cl.coeff(0,cc) - base_side_offset*cos(cl.coeff(2,cc) - M_PI/2.) + base_front_offset*cos(cl.coeff(2,cc) + M_PI);
-			q_des(1) = cl.coeff(1,cc) - base_side_offset*sin(cl.coeff(2,cc) - M_PI/2.) + base_front_offset*sin(cl.coeff(2,cc) + M_PI);
-			q_des(2) = cl.coeff(2,cc) - M_PI/2.;
-
-			// Set desired orientation
-			ori_des.setIdentity();
-
-			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				q_des << robot->_q; // set desired joint angles
-
-				state = B_SIDE_ELEV; // advance to next state
+			else if(!gripper_state[0] && previous_gripper_state[0])
+			{
+				close_gripper = !close_gripper;
 			}
 
+			// if(!gripper_state[0])
+			if(remote_enabled == 0)
+			{
+				// set joint controller to maintin robot in current position
+				joint_tasks[0]->reInitializeTask();
+				// joint_tasks[0]->_desired_position = robot[0]->_q;
+				// set current haptic device position
+				teleop_tasks[0]->setDeviceCenter(teleop_tasks[0]->_current_position_device, teleop_tasks[0]->_current_rotation_device);
+
+				state[0] = MAINTAIN_POSITION;
+			}			
+		}
+		else if(state[0] != GOTO_INITIAL_CONFIG && state[0] != MAINTAIN_POSITION)
+		{
+			command_torques[0].setZero(dof[0]);
+			teleop_tasks[0]->GravityCompTask();			
 		}
 
-
-		else if(state == B_SIDE_ELEV){ //
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			// x_des << -0.25, 2.2, 2.3;
-			x_des(0) = cl.coeff(0,cc) - tool_midpoint_offset*cos(cl.coeff(2,cc) - M_PI/2.);
-			x_des(1) = cl.coeff(1,cc) - tool_midpoint_offset*sin(cl.coeff(2,cc) - M_PI/2.);
-			x_des(2) = bottom_hole_height;
-
-			// Set desired orientation
-			ori_des = (AngleAxisd(left_ori.coeff(0,cc), Vector3d::UnitX())
-					 * AngleAxisd(left_ori.coeff(1,cc),  Vector3d::UnitY())
-					 * AngleAxisd(left_ori.coeff(2,cc), Vector3d::UnitZ())).toRotationMatrix();
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				// Advanced to the correct state depending if you are on your way up or down
-				if(elev_counter == 0){
-					state = B_SIDE_BOTTOM;
-					elev_counter = 1;
+		if(state[1] == HAPTIC_CONTROL)
+		{
+			// update tasks model
+			N_prec[1].setIdentity();
+			posori_tasks[1]->updateTaskModel(N_prec[1]);
+			N_prec[1] = posori_tasks[1]->_N;
+			joint_tasks[1]->updateTaskModel(N_prec[1]);
+			
+			// compute haptic commands
+			if(gripper_state[1]) //Full control
+			{
+				if(!previous_gripper_state[1])
+				{
+					teleop_tasks[1]->setDeviceCenter(haptic_centers[1], teleop_tasks[1]->_current_rotation_device);
+					teleop_tasks[1]->setRobotCenter(workspace_centers[1], posori_tasks[1]->_current_orientation);
+				
 				}
-				else{
-					state = BASE_DROP;
-					elev_counter = 0;
-				}
+				teleop_tasks[1]->computeHapticCommands6d( posori_tasks[1]->_desired_position,
+																   posori_tasks[1]->_desired_orientation);
 
 			}
-		}
-
-		else if(state == B_SIDE_BOTTOM){
-			// x_des << -0.03, 2.2, 2.3;
-			x_des(0) = cl.coeff(0,cc) - hole_side_offset*cos(cl.coeff(2,cc) - M_PI/2.);
-			x_des(1) = cl.coeff(1,cc) - hole_side_offset*sin(cl.coeff(2,cc) - M_PI/2.);
-			x_des(2) = bottom_hole_height;
-			// Desired orientation same as before
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				// Advanced to the correct state depending if you are going into or pulling out of hole
-				if(pull_counter == 0){
-					state = B_SIDE_BOTTOM_THRU; // arrived to hole surface and proceeding to go in
-					pull_counter = 1;
-				}
-				else{
-					state = B_SIDE_TOP; // just exited hole and moving to next hole
-					pull_counter = 0;
-				}
+			else //Only position control
+			{
+				teleop_tasks[1]->computeHapticCommands3d(posori_tasks[1]->_desired_position);
 			}
 
+			// compute robot set torques
+			posori_tasks[1]->computeTorques(posori_task_torques[1]);
+			joint_tasks[1]->computeTorques(joint_task_torques[1]);
+
+			command_torques[1] = joint_task_torques[1] + coriolis[1] + posori_task_torques[1];
+
+			passivity_controllers[1]->computePOPCForce(passivity_damping_force[1]);
+
+			if(remote_enabled == 0)
+			{
+				// set joint controller to maintin robot in current position
+				joint_tasks[1]->reInitializeTask();
+				// joint_tasks[1]->_desired_position = robot[1]->_q;
+				// set current haptic device position
+				teleop_tasks[1]->setDeviceCenter(teleop_tasks[1]->_current_position_device, teleop_tasks[1]->_current_rotation_device);
+
+				state[1] = MAINTAIN_POSITION;
+			}		
+		}
+		else if(state[1] != GOTO_INITIAL_CONFIG && state[1] != MAINTAIN_POSITION)
+		{
+			command_torques[1].setZero(dof[1]);
+			teleop_tasks[1]->GravityCompTask();			
 		}
 
-		else if(state == B_SIDE_BOTTOM_THRU){
-			// x_des << -0.03, 2.26, 2.3;
-			x_des(0) = cl.coeff(0,cc) - hole_side_offset*cos(cl.coeff(2,cc) - M_PI/2.) - drill_depth*cos(cl.coeff(2,cc) + M_PI);
-			x_des(1) = cl.coeff(1,cc) - hole_side_offset*sin(cl.coeff(2,cc) - M_PI/2.) - drill_depth*sin(cl.coeff(2,cc) + M_PI);;
-			x_des(2) = bottom_hole_height;
-			// Desired orientation same as before
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				state = B_SIDE_BOTTOM; // advance to next state
-			}
-		}
-
-		else if(state == B_SIDE_TOP){
-			// x_des << -0.03, 2.2, 2.56;
-			x_des(0) = cl.coeff(0,cc) - 0.06*cos(cl.coeff(2,cc) - M_PI/2.);
-			x_des(1) = cl.coeff(1,cc) - 0.06*sin(cl.coeff(2,cc) - M_PI/2.);
-			x_des(2) = top_hole_height;
-			// Desired orientation same as before
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				// Advanced to the correct state depending if you are going into or pulling out of hole
-				if(pull_counter == 0){
-					state = B_SIDE_TOP_THRU; // arrived to hole surface and proceeding to go in
-					pull_counter = 1;
-				}
-				else{
-					state = B_SIDE_ELEV; // just exited hole and moving to descend
-					pull_counter = 0;
-				}
-			}
-		}
-
-
-		else if(state == B_SIDE_TOP_THRU){
-			// x_des << -0.03, 2.26, 2.56;
-			x_des(0) = cl.coeff(0,cc) - hole_side_offset*cos(cl.coeff(2,cc) - M_PI/2.) - drill_depth*cos(cl.coeff(2,cc) + M_PI);
-			x_des(1) = cl.coeff(1,cc) - hole_side_offset*sin(cl.coeff(2,cc) - M_PI/2.) - drill_depth*sin(cl.coeff(2,cc) + M_PI);;
-			x_des(2) = top_hole_height;
-			// Desired orientation same as before
-
-			if ((posori_task->_current_position - x_des).norm() < tolerance){
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-
-				state = B_SIDE_TOP; // advance to next state
-			}
-		}
-
-
-		if(state == A_SIDE_BASE_NAV || state == B_SIDE_BASE_NAV || state == BASE_DROP
-			|| state == HOME || state == POSITION_HOLD){
-			/*** PRIMARY JOINT CONTROL***/
-
-			joint_task->_desired_position = q_des;
-
-			// update task model and set hierarchy
-			N_prec.setIdentity();
-			joint_task->updateTaskModel(N_prec);
-
-			// compute torques
-			joint_task->computeTorques(joint_task_torques);
-
-			command_torques = joint_task_torques;
-
-		}
-		else{
-			/*** PRIMARY POSORI CONTROL W/ JOINT CONTROL IN NULLSPACE***/
-			// update controlller posiitons
-			posori_task->_desired_position = x_des;
-			posori_task->_desired_orientation = ori_des;
-			joint_task->_desired_position = q_des;
-
-			// update task model and set hierarchy
-			N_prec.setIdentity();
-			posori_task->updateTaskModel(N_prec);
-			N_prec = posori_task->_N;
-			joint_task->updateTaskModel(N_prec);
-
-			// compute torques
-			posori_task->computeTorques(posori_task_torques);
-			joint_task->computeTorques(joint_task_torques);
-
-			command_torques = posori_task_torques + joint_task_torques;
-			command_torques(0) = joint_task_torques(0);
-			command_torques(1) = joint_task_torques(1);
-			command_torques(2) = joint_task_torques(2);
-
+		for(int i=0 ; i<n_robots ; i++)
+		{
+			previous_gripper_state[i] = teleop_tasks[i]->gripper_state;
 		}
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+		// else if(state_brush == HAPTIC_CONTROL)
+		// {
+
+		// 	// update tasks model
+		// 	N_prec[1].setIdentity();
+		// 	posori_tasks[1]->updateTaskModel(N_prec[1]);
+		// 	N_prec[1] = posori_tasks[1]->_N;
+		// 	joint_tasks[1]->updateTaskModel(N_prec[1]);
+			
+		// 	// // read gripper state
+		// 	gripper_state_brush = brush_teleop_task->gripper_state;
+		// 	// compute haptic commands
+		// 	if(gripper_state_brush) //Full control
+		// 	{
+		// 		if(!previous_gripper_state_brush)
+		// 		{
+		// 			brush_teleop_task->setDeviceCenter(haptic_center_brush, brush_teleop_task->_current_rotation_device);
+		// 			brush_teleop_task->setRobotCenter(workspace_center_brush, posori_tasks[1]->_current_orientation);
+				
+		// 		}
+		// 		Matrix3d desired_rotation_relative = Matrix3d::Identity();
+		// 		brush_teleop_task->computeHapticCommands6d( posori_tasks[1]->_desired_position,
+		// 														   posori_tasks[1]->_desired_orientation);
+
+		// 	}
+		// 	else //Only position control
+		// 	{
+		// 		brush_teleop_task->computeHapticCommands3d(posori_tasks[1]->_desired_position);
+		// 	}
+
+		// 	// compute robot set torques
+		// 	posori_tasks[1]->computeTorques(posori_task_torques[1]);
+		// 	joint_tasks[1]->computeTorques(joint_task_torques[1]);
+
+		// 	command_torques[1] = joint_task_torques[1] + coriolis[1] + posori_task_torques[1];
+
+		// 	passivity_controller_brush->computePOPCForce(haptic_damping_force_passivity_brush);
+
+		// 	if(remote_enabled == 0)
+		// 	{
+		// 	// set joint controller to maintin robot in current position
+		// 	joint_tasks[1]->reInitializeTask();
+		// 	// joint_tasks[1]->_desired_position = robot[1]->_q;
+		// 	// set current haptic device position
+		// 	brush_teleop_task->setDeviceCenter(brush_teleop_task->_current_position_device, brush_teleop_task->_current_rotation_device);
+
+		// 	state_brush = MAINTAIN_POSITION;
+		// 	}
+		// }
+
+		// else if(state_palette == MAINTAIN_POSITION)
+		// {
+		// 	// update robot home position task model
+		// 	N_prec[0].setIdentity();
+		// 	joint_tasks[0]->updateTaskModel(N_prec[0]);
+		// 	// compute robot torques
+		// 	joint_tasks[0]->computeTorques(joint_task_torques[0]);
+		// 	command_torques[0] = joint_task_torques[0] + coriolis[0];
+
+		// 	// compute homing haptic device
+		// 	palette_teleop_task->HomingTask();
+
+		// 	// read gripper state
+		// 	gripper_state_palette = palette_teleop_task->gripper_state;
+
+		// 	if (gripper_state_palette)
+		// 	{
+		// 		posori_tasks[0]->reInitializeTask();
+
+		// 		palette_teleop_task->setRobotCenter(workspace_center_palette, posori_tasks[0]->_current_orientation);
+		// 		palette_teleop_task->setDeviceCenter(haptic_center_palette, palette_teleop_task->_current_rotation_device);
+				
+		// 		state_palette = HAPTIC_CONTROL;
+		// 	}
+		// 	else if (restart_cycle == 1)
+		// 	{
+		// 		// set joint controller to robot home position
+		// 		joint_tasks[0]->reInitializeTask();
+		// 		joint_tasks[0]->_desired_position = q_initial[0];
+		// 		// set haptic device home position
+		// 		palette_teleop_task->setDeviceCenter(haptic_center_palette, palette_teleop_task->_current_rotation_device);
+
+		// 		remote_enabled = 1;
+		// 		restart_cycle = 0;
+		// 		redis_client.set(REMOTE_ENABLED_KEY, to_string(remote_enabled));
+		// 		redis_client.set(RESTART_CYCLE_KEY, to_string(restart_cycle));
+
+		// 		state_palette = GOTO_INITIAL_CONFIG;
+		// 	}
+		// }
+		// else
+		// {
+		// 	command_torques[0].setZero(dof[0]);
+		// 	brush_teleop_task->GravityCompTask();
+
+		// }
+
+		// else if(state_brush == MAINTAIN_POSITION)
+		// {
+		// 	// update robot home position task model
+		// 	N_prec[1].setIdentity();
+		// 	joint_tasks[1]->updateTaskModel(N_prec[1]);
+		// 	// compute robot torques
+		// 	joint_tasks[1]->computeTorques(joint_task_torques[1]);
+		// 	command_torques[1] = joint_task_torques[1] + coriolis[1];
+
+		// 	// compute homing haptic device
+		// 	brush_teleop_task->HomingTask();
+
+		// 	// read gripper state
+		// 	gripper_state_brush = brush_teleop_task->gripper_state;
+
+
+
+		// 	if (remote_enabled==1 && gripper_state_brush)
+		// 	{
+		// 		posori_tasks[1]->reInitializeTask();
+
+		// 		brush_teleop_task->setRobotCenter(workspace_center_brush, posori_tasks[1]->_current_orientation);
+		// 		brush_teleop_task->setDeviceCenter(haptic_center_brush, brush_teleop_task->_current_rotation_device);
+				
+		// 		state_brush = HAPTIC_CONTROL;
+		// 	}
+		// 	else if (restart_cycle == 1)
+		// 	{
+		// 		// set joint controller to robot home position
+		// 		joint_tasks[1]->reInitializeTask();
+		// 		joint_tasks[1]->_desired_position = q_initial[1];
+		// 		// set haptic device home position
+		// 		brush_teleop_task->setDeviceCenter(haptic_center_brush, brush_teleop_task->_current_rotation_device);
+
+		// 		state_brush = GOTO_INITIAL_CONFIG;
+		// 	}
+		// }
+		// else
+		// {
+		// 	command_torques[1].setZero(dof[1]);
+		// 	brush_teleop_task->GravityCompTask();
+		// }
+		// previous_gripper_state_brush = brush_teleop_task->gripper_state;
+
+///////////////////////////////////////////////////////////////////////////////////////////
+		//// State Machine Robot 0 - Haptic Palette ////
+		// if(state_palette == GOTO_INITIAL_CONFIG)
+		// {
+		// 	// update robot home position task model
+		// 	N_prec[0].setIdentity();
+		// 	joint_tasks[0]->updateTaskModel(N_prec[0]);
+		// 	// compute robot torques
+		// 	joint_tasks[0]->computeTorques(joint_task_torques[0]);
+		// 	command_torques[0] = joint_task_torques[0] + coriolis[0];
+			
+		// 	// compute homing haptic device
+		// 	palette_teleop_task->HomingTask();
+
+		// 	// read gripper state
+		// 	gripper_state_palette = palette_teleop_task->gripper_state;
+
+		// 	if((joint_tasks[0]->_desired_position - joint_tasks[0]->_current_position).norm() < 0.2 && palette_teleop_task->device_homed && gripper_state_palette)
+		// 	{
+		// 		joint_tasks[0]->_ki = 0;
+		// 		posori_tasks[0]->reInitializeTask();
+		// 		workspace_center_palette = posori_tasks[0]->_current_position;
+		// 		haptic_center_palette = palette_teleop_task->_current_position_device;
+
+		// 		passivity_controller_brush->reInitializeTask();
+
+		// 		palette_teleop_task->setRobotCenter(workspace_center_palette, posori_tasks[0]->_current_orientation);
+		// 		palette_teleop_task->setDeviceCenter(haptic_center_palette, palette_teleop_task->_current_rotation_device);
+				
+		// 		state_palette = HAPTIC_CONTROL;
+		// 	}
+		// }
+
+		// else if(state_palette == HAPTIC_CONTROL)
+		// {
+
+		// 	// update tasks model
+		// 	N_prec[0].setIdentity();
+		// 	posori_tasks[0]->updateTaskModel(N_prec[0]);
+		// 	N_prec[0] = posori_tasks[0]->_N;
+		// 	joint_tasks[0]->updateTaskModel(N_prec[0]);
+
+		// 	//compute haptic commands (only position control) - without force feedback (force_sensed=0)
+		// 	palette_teleop_task->computeHapticCommands3d(posori_tasks[0]->_desired_position);
+
+		// 	// compute robot set torques
+		// 	posori_tasks[0]->computeTorques(posori_task_torques[0]);
+		// 	joint_tasks[0]->computeTorques(joint_task_torques[0]);
+
+		// 	command_torques[0] = joint_task_torques[0] + coriolis[0] + posori_task_torques[0];
+
+
+		// 	// read gripper state
+		// 	gripper_state_palette = palette_teleop_task->gripper_state;
+
+		// 	if(!gripper_state_palette)
+		// 	{
+		// 	// set joint controller to maintin robot in current position
+		// 	joint_tasks[0]->reInitializeTask();
+		// 	// joint_tasks[0]->_desired_position = robot[0]->_q;
+		// 	// set current haptic device position
+		// 	palette_teleop_task->setDeviceCenter(palette_teleop_task->_current_position_device, palette_teleop_task->_current_rotation_device);
+
+		// 	state_palette = MAINTAIN_POSITION;
+		// 	}
+		// }
+
+		// else if(state_palette == MAINTAIN_POSITION)
+		// {
+		// 	// update robot home position task model
+		// 	N_prec[0].setIdentity();
+		// 	joint_tasks[0]->updateTaskModel(N_prec[0]);
+		// 	// compute robot torques
+		// 	joint_tasks[0]->computeTorques(joint_task_torques[0]);
+		// 	command_torques[0] = joint_task_torques[0] + coriolis[0];
+
+		// 	// compute homing haptic device
+		// 	palette_teleop_task->HomingTask();
+
+		// 	// read gripper state
+		// 	gripper_state_palette = palette_teleop_task->gripper_state;
+
+		// 	if (gripper_state_palette)
+		// 	{
+		// 		posori_tasks[0]->reInitializeTask();
+
+		// 		palette_teleop_task->setRobotCenter(workspace_center_palette, posori_tasks[0]->_current_orientation);
+		// 		palette_teleop_task->setDeviceCenter(haptic_center_palette, palette_teleop_task->_current_rotation_device);
+				
+		// 		state_palette = HAPTIC_CONTROL;
+		// 	}
+		// 	else if (restart_cycle == 1)
+		// 	{
+		// 		// set joint controller to robot home position
+		// 		joint_tasks[0]->reInitializeTask();
+		// 		joint_tasks[0]->_desired_position = q_initial[0];
+		// 		// set haptic device home position
+		// 		palette_teleop_task->setDeviceCenter(haptic_center_palette, palette_teleop_task->_current_rotation_device);
+
+		// 		remote_enabled = 1;
+		// 		restart_cycle = 0;
+		// 		redis_client.set(REMOTE_ENABLED_KEY, to_string(remote_enabled));
+		// 		redis_client.set(RESTART_CYCLE_KEY, to_string(restart_cycle));
+
+		// 		state_palette = GOTO_INITIAL_CONFIG;
+		// 	}
+		// }
+		// else
+		// {
+		// 	command_torques[0].setZero(dof[0]);
+		// 	brush_teleop_task->GravityCompTask();
+
+		// }
+///////////////////////////////////////////////////////////////////////////////////////////
+
+		
 
 		// send to redis
-		redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
+		for(int i=0 ; i<n_robots ; i++)
+		{
+			haptic_force_plus_passivity[i] = teleop_tasks[i]->_commanded_force_device + passivity_damping_force[i];
+		}
+		redis_client.executeWriteCallback(0);
 
+		prev_time = current_time;
 		controller_counter++;
+	}
+
+
+
+	for(int i=0 ; i<n_robots ; i++)
+	{
+		redis_client.setEigenMatrixJSON(DEVICE_COMMANDED_FORCE_KEYS[i], Vector3d::Zero());
+		redis_client.setEigenMatrixJSON(DEVICE_COMMANDED_TORQUE_KEYS[i], Vector3d::Zero());
+		redis_client.set(DEVICE_COMMANDED_GRIPPER_FORCE_KEYS[i], "0.0");
+
+		command_torques[i].setZero();
+		redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEYS[i], command_torques[i]);
 	}
 
 	double end_time = timer.elapsedTime();
 	std::cout << "\n";
 	std::cout << "Controller Loop run time  : " << end_time << " seconds\n";
 	std::cout << "Controller Loop updates   : " << timer.elapsedCycles() << "\n";
-	std::cout << "Controller Loop frequency : " << timer.elapsedCycles()/end_time << "Hz\n";
+    std::cout << "Controller Loop frequency : " << timer.elapsedCycles()/end_time << "Hz\n";
 
 	return 0;
 }
