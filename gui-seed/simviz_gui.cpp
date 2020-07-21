@@ -21,10 +21,19 @@
 using namespace Eigen;
 
 // redis keys
-constexpr const char *world_file = "resources/world.urdf";
-constexpr const char *robot_name = "mmp_panda";
+print("hola");
+constexpr const char *world_file = "./construction/resources/world.urdf";
+const vector<string> ROBOT_FILES = {
+	"./construction/resources/panda_arm.urdf",
+	"./construction/resources/panda_arm.urdf"
+};
+
+const vector<string> robot_names = {
+	"PANDA_LEFT",
+	"PANDA_RIGHT",
+};
 constexpr const char *camera_name = "camera_fixed";
-constexpr const char *SIM_TITLE = "SAI2.0 Example - Mobile Panda";
+constexpr const char *SIM_TITLE = "SAI2.0 Example - Two Pandas";
 
 RedisClient redis_client;
 bool fSimulationRunning = false;
@@ -86,39 +95,49 @@ int main(int argc, char **argv)
 	auto sim = new Simulation::Sai2Simulation(world_file, false);
 
 	// load robots
-	Eigen::Vector3d world_gravity = sim->_world->getGravity().eigen();
-	auto robot = new Sai2Model::Sai2Model(ROBOT_FILE, false, sim->getRobotBaseTransform(robot_name), world_gravity);
 
-	sim->getJointPositions(robot_name, robot->_q);
-	robot->updateModel();
+	for (int i=0; i < N_ROBOTS; i++)
+	{	
+		Eigen::Vector3d world_gravity = sim->_world->getGravity().eigen();
+		auto robot = new Sai2Model::Sai2Model(ROBOT_FILES[i], false, sim->getRobotBaseTransform(robot_names[i]), world_gravity);
+
+		sim->getJointPositions(robot_names[i], robots[i]->_q);
+		robots->updateModel();
+
 
 	// initialize GLFW window
-	GLFWwindow *window = glfwInitialize();
+		GLFWwindow *window = glfwInitialize();
 
-	double last_cursorx, last_cursory;
+		double last_cursorx, last_cursory;
 
 	// set callbacks
-	glfwSetKeyCallback(window, keySelect);
-	glfwSetMouseButtonCallback(window, mouseClick);
+		glfwSetKeyCallback(window, keySelect);
+		glfwSetMouseButtonCallback(window, mouseClick);
 
 	// init click force widget
-	auto ui_force_widget = new UIForceWidget(robot_name, robot, graphics);
-	ui_force_widget->setEnable(false);
+		auto ui_force_widget = new UIForceWidget(robot_names[i], robots[i], graphics);
+		ui_force_widget->setEnable(false);
+	}
 
     // initialize glew
 	glewInitialize();
 
 	// start the simulation thread first
 	fSimulationRunning = true;
-	std::thread sim_thread(simulation, robot, sim, ui_force_widget);
+	std::thread sim_thread(simulation, robots[i], sim, ui_force_widget);
 
 	// while window is open:
 	while (!glfwWindowShouldClose(window) && fSimulationRunning)
 	{
 		// update graphics. this automatically waits for the correct amount of time
+		
+
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height);
-		graphics->updateGraphics(robot_name, robot);
+		for (int i=0; i < N_ROBOTS; i++)
+		{
+			graphics->updateGraphics(robot_names[i], robots[i]);
+		}
 		graphics->render(camera_name, width, height);
 		glfwSwapBuffers(window);
 		glFinish();
@@ -257,31 +276,36 @@ void simulation(Sai2Model::Sai2Model *robot, Simulation::Sai2Simulation *sim, UI
 	while (fSimulationRunning)
 	{
 		fTimerDidSleep = timer.waitForNextLoop();
-
+		for (int i=0; i < N_ROBOTS; i++)
+		{	
 		// read command torques from redis and apply to simulation
-		command_torques = redis_client.getEigenMatrixJSON(SIM_JOINT_TORQUES_COMMANDED_KEY);
-		sim->setJointTorques(robot_name, command_torques);
+			command_torques = redis_client.getEigenMatrixJSON(SIM_JOINT_TORQUES_COMMANDED_KEY);
+			sim->setJointTorques(robot_names[i], command_torques);
 
-		ui_force_widget->getUIForce(ui_force);
-		ui_force_widget->getUIJointTorques(ui_force_command_torques);
+			ui_force_widget->getUIForce(ui_force);
+			ui_force_widget->getUIJointTorques(ui_force_command_torques);
 
-		if (fRobotLinkSelect)
-			sim->setJointTorques(robot_name, command_torques + ui_force_command_torques);
-		else
+			if (fRobotLinkSelect)
+				sim->setJointTorques(robot_names[i], command_torques + ui_force_command_torques);
+			else
             // get gravity torques
-            robot->gravityVector(g);
-			sim->setJointTorques(robot_name, command_torques + g);
+            	robot->gravityVector(g);
+				sim->setJointTorques(robot_names[i], command_torques + g);
 
 		// integrate forward
-		sim->integrate(0.001);
-
+			sim->integrate(0.001);
+		}
 		// read robot state and update redis
-		sim->getJointPositions(robot_name, robot->_q);
-		sim->getJointVelocities(robot_name, robot->_dq);
-		robot->updateKinematics();
+		
+		for (int i=0; i < N_ROBOTS; i++)
+		{	
+			sim->getJointPositions(robot_names[i], robots[i]->_q);
+			sim->getJointVelocities(robot_names[i], robots[i]->_dq);
+			robots[i]->updateKinematics();
 
-		redis_client.setEigenMatrixJSON(SIM_JOINT_ANGLES_KEY, robot->_q);
-		redis_client.setEigenMatrixJSON(SIM_JOINT_VELOCITIES_KEY, robot->_dq);
+			redis_client.setEigenMatrixJSON(SIM_JOINT_ANGLES_KEY, robots[i]->_q);
+			redis_client.setEigenMatrixJSON(SIM_JOINT_VELOCITIES_KEY, robots[i]->_dq);
+		}
 	}
 
 	double end_time = timer.elapsedTime();
