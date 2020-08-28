@@ -9,12 +9,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link0.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link0.obj"/>
         </geometry>
       </visual>
 <!--       <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link0.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link0.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -26,12 +26,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link1.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link1.obj"/>
         </geometry>
       </visual>
       <!-- <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link1.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link1.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -43,12 +43,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link2.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link2.obj"/>
         </geometry>
       </visual>
       <!-- <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link2.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link2.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -60,12 +60,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link3.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link3.obj"/>
         </geometry>
       </visual>
       <!-- <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link3.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link3.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -77,12 +77,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link4.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link4.obj"/>
         </geometry>
       </visual>
 <!--       <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link4.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link4.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -94,12 +94,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link5.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link5.obj"/>
         </geometry>
       </visual>
 <!--       <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link5.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link5.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -111,12 +111,12 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link6.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link6.obj"/>
         </geometry>
       </visual>
       <!-- <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link6.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link6.obj"/>
         </geometry>
       </collision> -->
     </link>
@@ -128,15 +128,34 @@
       </inertial>
       <visual>
         <geometry>
-          <mesh filename="../../../Model/meshes/visual/link7.obj"/>
+          <mesh filename="../../../model/panda/meshes/visual/link7.obj"/>
         </geometry>
       </visual>
       <!-- <collision>
         <geometry>
-          <mesh filename="../../../Model/meshes/collision/link7.obj"/>
+          <mesh filename="../../../model/panda/meshes/collision/link7.obj"/>
         </geometry>
       </collision> -->
     </link>
+
+    <link name="linkTool">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 -0 0" />
+        <mass value="1" />
+        <inertia ixx="0" iyy="0" izz="0.003" ixy="0" ixz="0" iyz="0" />
+      </inertial>
+      <visual>
+        <geometry>
+          <mesh filename="../../../model/Drill2/Drill2.obj"/>
+        </geometry>
+      </visual>
+      <!-- <collision>
+        <geometry>
+          <mesh filename="../../../model/Drill2/Drill2.obj"/>
+        </geometry>
+      </collision> -->
+    </link> -->
+    
     <joint name="joint1" type="revolute">
       <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
       <origin rpy="0 0 0" xyz="0 0 0.333"/>

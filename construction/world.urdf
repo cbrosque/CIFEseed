@@ -52,7 +52,7 @@
             </material>
         </visual>
     </static_object>
-    
+
     <static_object name = "Column1">
         <origin xyz="0.0 0.0 0" rpy="0 0 0" />
         <!--<collision>
@@ -166,7 +166,7 @@
 		<lookat xyz="0.0 0.0 0.0" />
 	</light> -->
 
-  <!--   <static_object name="Floor">
+    <static_object name="Floor">
         <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
         <collision>
             <origin xyz="0.0 0.0 -0.05" rpy="0 0 0" />
@@ -183,7 +183,7 @@
                 <color rgba="1.0 0.1 0.1 1.0" />
             </material>
         </visual>
-    </static_object> --> -->
+    </static_object> -->
 
 	<camera name="camera_fixed">
 		<position xyz="-1.0 -1.2 1.0" />
