@@ -126,6 +126,7 @@
         <mass value="1.8" />
         <inertia ixx="0.09" iyy="0.05" izz="0.07" ixy="0" ixz="0" iyz="0" />
       </inertial>
+      <!-- LINK VIZ -->
       <visual>
         <geometry>
           <mesh filename="../../../model/panda/meshes/visual/link7.obj"/>
@@ -136,26 +137,20 @@
           <mesh filename="../../../model/panda/meshes/collision/link7.obj"/>
         </geometry>
       </collision> -->
-    </link>
 
-    <link name="linkTool">
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 -0 0" />
-        <mass value="1" />
-        <inertia ixx="0" iyy="0" izz="0.003" ixy="0" ixz="0" iyz="0" />
-      </inertial>
+      <!-- TOOL VIZ -->
       <visual>
+        <origin xyz="0 0 0.505" rpy="0 0 0" />
         <geometry>
-          <mesh filename="../../../model/Drill2/Drill2.obj"/>
+            <!-- <box size="0.08 0.08 0.08" /> -->
+            <!-- <cylinder radius="0.06" length="0.03"/> -->
+            <mesh filename="../../../model/Drill2/Drill2.obj"/>      
+            <!-- <mesh filename="../../../model/cordless_drill/cordless_drill.obj"/> -->
         </geometry>
       </visual>
-      <!-- <collision>
-        <geometry>
-          <mesh filename="../../../model/Drill2/Drill2.obj"/>
-        </geometry>
-      </collision> -->
-    </link> -->
-    
+    </link>
+
+
     <joint name="joint1" type="revolute">
       <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
       <origin rpy="0 0 0" xyz="0 0 0.333"/>
