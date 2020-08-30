@@ -141,11 +141,13 @@
       <!-- TOOL VIZ -->
       <visual>
         <origin xyz="0 0 0.1" rpy="0 0 1.57" />
+        <!-- <origin xyz="0 0 0.1" rpy="0 0 2.35" /> -->
         <geometry>
             <!-- <box size="0.08 0.08 0.08" /> -->
             <!-- <cylinder radius="0.06" length="0.03"/> -->
-            <mesh filename="../../../model/Drill2/Drill2.obj"/>      
-            <!-- <mesh filename="../../../model/Wrench/Wrench.obj"/>       -->
+            <!-- <mesh filename="../../../model/Drill2/Drill2.obj"/>       -->
+            <!-- <mesh filename="../../../model/Monkey_Wrench_v3/10299_Monkey-Wrench_v1_L3.obj"/>       -->
+            <mesh filename="../../../model/Wrench/Wrench.obj"/>      
             <!-- <mesh filename="../../../model/cordless_drill/cordless_drill.obj"/> -->
         </geometry>
       </visual>

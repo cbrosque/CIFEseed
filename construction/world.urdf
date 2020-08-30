@@ -3,12 +3,12 @@
 <world name="world" gravity="0.0 0.0 -9.81">
 
     <robot name="PANDA_LEFT">
-        <model dir="./resources" path="panda_arm.urdf" name="panda_arm" />
+        <model dir="./resources" path="panda_arm_drill.urdf" name="panda_arm" />
         <origin xyz="0 -0.5 0.0" rpy="0 0 0.3010693" />
     </robot>
 
     <robot name="PANDA_RIGHT">
-        <model dir="./resources" path="panda_arm.urdf" name="panda_arm" />
+        <model dir="./resources" path="panda_arm_wrench.urdf" name="panda_arm_wrench" />
         <origin xyz="-0.06 0.57 0.0" rpy="0 0 -1.0864675" />
     </robot>
 
@@ -50,6 +50,27 @@
         <position xyz="2.0 2.0 2.0" />
         <lookat xyz="0.0 0.0 0.0" />
     </light>
+
+
+    <!-- <light name="light1" type="directional">
+        <position xyz="2.0 -2.0 4.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light2" type="directional">
+        <position xyz="2.0 2.0 4.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light3" type="directional">
+        <position xyz="-2.0 -2.0 1.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light4" type="directional">
+        <position xyz="-2.0 2.0 1.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light> -->
 
     <camera name="camera_fixed">
         <position xyz="2.0 0.0 1.0" />

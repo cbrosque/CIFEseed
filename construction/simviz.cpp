@@ -28,8 +28,8 @@ using namespace Eigen;
 
 const string world_file = "./resources/world.urdf";
 const vector<string> robot_files = {
-	"./resources/panda_arm.urdf",
-	"./resources/panda_arm.urdf",
+	"./resources/panda_arm_wrench.urdf",
+	"./resources/panda_arm_drill.urdf",
 };
 const vector<string> robot_names = {
 	"PANDA_LEFT",
@@ -189,7 +189,7 @@ int main() {
 
 	// create window and make it current
 	glfwWindowHint(GLFW_VISIBLE, 0);
-	GLFWwindow* window = glfwCreateWindow(windowW, windowH, "SAI2.0 - PandaApplications", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(windowW, windowH, "SAI2.0 - Panda Bolting", NULL, NULL);
 	glfwSetWindowPos(window, windowPosX, windowPosY);
 	glfwShowWindow(window);
 	glfwMakeContextCurrent(window);

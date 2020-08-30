@@ -146,7 +146,7 @@
             <!-- <cylinder radius="0.06" length="0.03"/> -->
             <mesh filename="../../../model/Drill2/Drill2.obj"/>      
             <!-- <mesh filename="../../../model/Wrench/Wrench.obj"/>       -->
-            <!-- <mesh filename="../../../model/cordless_drill/cordless_drill.obj"/> -->
+            <!-- <mesh filename="../../../model/cordless_drill/10108_Cordless Drill_v2_Iteration2.obj"/> -->
         </geometry>
       </visual>
     </link>
