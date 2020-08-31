@@ -4,7 +4,7 @@
 
 //#include "uiforce/UIForceWidget.h"
 
-
+#include <GL/glew.h> 
 #include "Sai2Model.h"
 #include "Sai2Graphics.h"
 #include "Sai2Simulation.h"
@@ -110,6 +110,9 @@ Vector2d gripperControl(const int robot_index, vector<Sai2Model::Sai2Model*> rob
 // callback to print glfw errors
 void glfwError(int error, const char* description);
 
+// callback to print glew errors
+bool glewInitialize();
+
 // callback when a key is pressed
 void keySelect(GLFWwindow* window, int key, int scancode, int action, int mods);
 
@@ -202,6 +205,9 @@ int main() {
 	// cache variables
 	double last_cursorx, last_cursory;
 
+	// initialize glew
+	glewInitialize();
+	
 	fSimulationRunning = true;
 	thread sim_thread(simulation, robots, sim);
 
@@ -494,11 +500,29 @@ Vector2d gripperControl(const int robot_index, vector<Sai2Model::Sai2Model*> rob
 
 }
 
+
+
 //------------------------------------------------------------------------------
 
 void glfwError(int error, const char* description) {
 	cerr << "GLFW Error: " << description << endl;
 	exit(1);
+}
+
+//------------------------------------------------------------------------------
+
+bool glewInitialize() {
+	bool ret = false;
+	#ifdef GLEW_VERSION
+	if (glewInit() != GLEW_OK) {
+		cout << "Failed to initialize GLEW library" << endl;
+		cout << glewGetErrorString(ret) << endl;
+		glfwTerminate();
+	} else {
+		ret = true;
+	}
+	#endif
+	return ret;
 }
 
 //------------------------------------------------------------------------------
