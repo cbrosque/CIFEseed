@@ -13,5 +13,5 @@ newmtl 10108_Cordless_Drill_v2
 	Kd 0.5882 0.5882 0.5882
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	#map_Ka 10108_Cordless Drill_v2_Diffuse.jpg
-	#map_Kd 10108_Cordless Drill_v2_Diffuse.jpg
+	map_Ka 10108_Cordless Drill_v2_Diffuse.jpg
+	map_Kd 10108_Cordless Drill_v2_Diffuse.jpg

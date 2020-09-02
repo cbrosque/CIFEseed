@@ -12,7 +12,7 @@
           <mesh filename="../../../model/panda/meshes/visual/link0.obj"/>
         </geometry>
       </visual>
-<!--       <collision>
+      <!-- <collision>
         <geometry>
           <mesh filename="../../../model/panda/meshes/collision/link0.obj"/>
         </geometry>
@@ -80,7 +80,7 @@
           <mesh filename="../../../model/panda/meshes/visual/link4.obj"/>
         </geometry>
       </visual>
-<!--       <collision>
+      <!-- <collision>
         <geometry>
           <mesh filename="../../../model/panda/meshes/collision/link4.obj"/>
         </geometry>
@@ -97,7 +97,7 @@
           <mesh filename="../../../model/panda/meshes/visual/link5.obj"/>
         </geometry>
       </visual>
-<!--       <collision>
+      <!-- <collision>
         <geometry>
           <mesh filename="../../../model/panda/meshes/collision/link5.obj"/>
         </geometry>
@@ -138,19 +138,26 @@
         </geometry>
       </collision> -->
 
-      <!-- TOOL VIZ -->
+      <!-- WRENCH VIZ -->
       <visual>
-        <origin xyz="0 0 0.1" rpy="0 0 1.57" />
-        <!-- <origin xyz="0 0 0.1" rpy="0 0 2.35" /> -->
+        <origin xyz="-0.0 -0.17 0.1" rpy="0 0 1.57" /> <!-- for 10299_Monkey-Wrench_v1_L3.obj -->
+        <!-- <origin xyz="0 0 0.1" rpy="0 0 1.57" />  for Wrench.obj --> 
         <geometry>
             <!-- <box size="0.08 0.08 0.08" /> -->
             <!-- <cylinder radius="0.06" length="0.03"/> -->
-            <!-- <mesh filename="../../../model/Drill2/Drill2.obj"/>       -->
-            <mesh filename="../../../model/Monkey_Wrench_v3/10299_Monkey-Wrench_v1_L3.obj"/>      
+            <mesh filename="../../../model/Monkey_Wrench_v3/10299_Monkey-Wrench_v1_L3.obj" scale="0.011 0.011 0.011"/>      
             <!-- <mesh filename="../../../model/Wrench/Wrench.obj"/>       -->
-            <!-- <mesh filename="../../../model/cordless_drill/cordless_drill.obj"/> -->
         </geometry>
       </visual>
+
+      <!-- WRENCH COLLISION-->
+      <!-- <collision>
+          <origin xyz="-0.0 -0.17 0.1" rpy="0 0 1.57" />
+          <geometry>
+              <mesh filename="../../../model/Monkey_Wrench_v3/10299_Monkey-Wrench_v1_L3.obj" scale="0.011 0.011 0.011"/> 
+          </geometry>
+      </collision> -->
+
     </link>
 
 
