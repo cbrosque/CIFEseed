@@ -2,12 +2,12 @@
 
 <world name="world" gravity="0.0 0.0 -9.81">
 
-    <robot name="PANDA_LEFT">
+    <robot name="PANDA_DRILL">
         <model dir="./resources" path="panda_arm_drill.urdf" name="panda_arm" />
         <origin xyz="0 -0.5 0.0" rpy="0 0 0.3010693" />
     </robot>
 
-    <robot name="PANDA_RIGHT">
+    <robot name="PANDA_WRENCH">
         <model dir="./resources" path="panda_arm_wrench.urdf" name="panda_arm_wrench" />
         <origin xyz="-0.06 0.57 0.0" rpy="0 0 -1.0864675" />
     </robot>

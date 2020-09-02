@@ -46,8 +46,8 @@ const vector<string> robot_files = {
 	"./resources/panda_arm_drill.urdf",
 };
 const vector<string> robot_names = {
-	"PANDA_LEFT",
-	"PANDA_RIGHT",
+	"PANDA_DRILL",
+	"PANDA_WRENCH",
 };
 const vector<string> object_names = {
 	// "Column"
@@ -59,24 +59,25 @@ const int n_objects = object_names.size();
 
 /* --------- redis keys ---------*/
 // - write:
-const string TIMESTAMP_KEY = "sai2::cs225a::robot::simulation::timestamp";
+const string TIMESTAMP_KEY = "sai2::ConstructionBolting::timestamp";
+
 const vector<string> JOINT_ANGLES_KEYS  = {
-	"sai2::cs225a::robot::panda1::sensors::q",
-	"sai2::cs225a::robot::panda2::sensors::q",
+	"sai2::ConstructionBolting::pandaDrill::sensors::q",
+	"sai2::ConstructionBolting::pandaWrench::sensors::q",
 };
 const vector<string> JOINT_VELOCITIES_KEYS = {
-	"sai2::cs225a::robot::panda1::sensors::dq",
-	"sai2::cs225a::robot::panda2::sensors::dq",
+	"sai2::ConstructionBolting::pandaDrill::sensors::dq",
+	"sai2::ConstructionBolting::pandaWrench::sensors::dq",
 };
 const vector<string> FORCE_SENSED_KEYS = {
-	"sai2::cs225a::robot::panda1::sensors::f_op",
-	"sai2::cs225a::robot::panda2::sensors::f_op",
+	"sai2::ConstructionBolting::pandaDrill::sensors::f_op",
+	"sai2::ConstructionBolting::pandaWrench::sensors::f_op",
 };
 
 // - read
 const vector<string> TORQUES_COMMANDED_KEYS = {
-	"sai2::cs225a::robot::panda1::actuators::fgc",
-	"sai2::cs225a::robot::panda2::actuators::fgc",
+	"sai2::cs225a::robot::pandaDrill::actuators::fgc",
+	"sai2::cs225a::robot::pandaWrench::actuators::fgc",
 };
 
 RedisClient redis_client;
