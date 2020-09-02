@@ -31,14 +31,22 @@
         </visual>
     </static_object>
 
-    <static_object name = "Column1">
+    <static_object name = "Column">
         <origin xyz="-0.2 0.2 0" rpy="0 0 0" />
         <visual>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="./resources/../../../model/test_objects/meshes/visual/Column1.obj" scale="1.0 1.0 1.0"/>
+                <mesh filename="./resources/../../../model/Column1/Column1.obj" scale="1.0 1.0 1.0"/>
+                <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
             </geometry>
         </visual>
+        <collision>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="./resources/../../../model/Column1/Column1.obj" scale="1.0 1.0 1.0"/>
+                <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
+            </geometry>
+        </collision>
     </static_object>
 
 	<light name="light1" type="directional">

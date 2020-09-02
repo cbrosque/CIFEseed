@@ -151,12 +151,12 @@
       </visual>
 
       <!-- WRENCH COLLISION-->
-      <!-- <collision>
+      <collision>
           <origin xyz="-0.0 -0.17 0.1" rpy="0 0 1.57" />
           <geometry>
               <mesh filename="../../../model/Monkey_Wrench_v3/10299_Monkey-Wrench_v1_L3.obj" scale="0.011 0.011 0.011"/> 
           </geometry>
-      </collision> -->
+      </collision>
 
     </link>
 
