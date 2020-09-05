@@ -32,7 +32,7 @@
 
 
 /* --------------------------------------------------------------------------------------
-	Setup -> sim loop and Redis
+	Initialize -> sim loop and Redis
 -------------------------------------------------------------------------------------*/
 bool fSimulationRunning = false;
 void sighandler(int){fSimulationRunning = false;}
@@ -76,8 +76,8 @@ const vector<string> FORCE_SENSED_KEYS = {
 
 // - read
 const vector<string> TORQUES_COMMANDED_KEYS = {
-	"sai2::cs225a::robot::pandaDrill::actuators::fgc",
-	"sai2::cs225a::robot::pandaWrench::actuators::fgc",
+	"sai2::ConstructionBolting::pandaDrill::actuators::fgc",
+	"sai2::ConstructionBolting::pandaWrench::actuators::fgc",
 };
 
 RedisClient redis_client;
