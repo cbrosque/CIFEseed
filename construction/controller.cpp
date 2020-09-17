@@ -181,6 +181,7 @@ int main() {
 		Control Loop - State Machine
 	-------------------------------------------------------------------------------------*/
 	while (runloop) {
+		
 		// wait for next scheduled loop
 		timer.waitForNextLoop();
 		current_time = timer.elapsedTime() - start_time;
@@ -199,9 +200,9 @@ int main() {
 		if(state == APPROACH)
 		{
 			// set goal positions
-			Vector3d robotDrill_desired_position_in_world = Vector3d(0.2, -0.15, 0.03);
+			Vector3d robotDrill_desired_position_in_world = Vector3d(0.2, -0.3, 0.2);
 			Matrix3d robotDrill_desired_orientation_in_world = AngleAxisd(180.0/180.0*M_PI, Vector3d::UnitX()).toRotationMatrix()*AngleAxisd(45.0/180.0*M_PI, Vector3d::UnitZ()).toRotationMatrix();
-			Vector3d robotWrench_desired_position_in_world = Vector3d(0.2,  0.15, 0.03);
+			Vector3d robotWrench_desired_position_in_world = Vector3d(0.2,  0.3, 0.2);
 			Matrix3d robotWrench_desired_orientation_in_world = AngleAxisd(180.0/180.0*M_PI, Vector3d::UnitX()).toRotationMatrix()*AngleAxisd(45.0/180.0*M_PI, Vector3d::UnitZ()).toRotationMatrix();
 
 			posori_tasks[0]->_desired_position = robot_pose_in_world[0].linear().transpose()*(robotDrill_desired_position_in_world - robot_pose_in_world[0].translation());
