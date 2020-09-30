@@ -2,14 +2,9 @@
 
 <world name="world" gravity="0.0 0.0 -9.81">
 
-    <robot name="PANDA_DRILL">
-        <model dir="./resources" path="panda_arm_drill.urdf" name="panda_arm" />
+    <robot name="mmp_panda">
+        <model dir="./resources" path="mmp_panda.urdf" name="mmp_panda" />
         <origin xyz="0 -0.5 0.0" rpy="0 0 0.3010693" />
-    </robot>
-
-    <robot name="PANDA_WRENCH">
-        <model dir="./resources" path="panda_arm_wrench.urdf" name="panda_arm_wrench" />
-        <origin xyz="-0.06 0.57 0.0" rpy="0 0 -1.0864675" />
     </robot>
 
     <static_object name="Floor">
@@ -31,19 +26,19 @@
         </visual>
     </static_object>
 
-    <static_object name = "Column">
+    <static_object name = "joint">
         <origin xyz="-0.2 0.2 0" rpy="0 0 0" />
         <visual>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="./resources/../../../model/Column1/Column1.obj" scale="1.0 1.0 1.0"/>
+                <mesh filename="./resources/../../../model/Joint/Joint.obj" scale="1.0 1.0 1.0"/>
                 <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
             </geometry>
         </visual>
         <collision>
             <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
             <geometry>
-                <mesh filename="./resources/../../../model/Column1/Column1.obj" scale="1.0 1.0 1.0"/>
+                <mesh filename="./resources/../../../model/Joint/Joint.obj" scale="1.0 1.0 1.0"/>
                 <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
             </geometry>
         </collision>

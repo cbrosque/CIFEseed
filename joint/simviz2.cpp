@@ -20,7 +20,7 @@ void sighandler(int){fSimulationRunning = false;}
 using namespace std;
 using namespace Eigen;
 
-const string world_file = "./resources/world.urdf";
+const string world_file = "./resources/world2.urdf";
 const string robot_file = "./resources/mmp_panda.urdf";
 const string obj_file = "mmp_panda_tool_no_collision.urdf";
 const string robot_name = "mmp_panda";
