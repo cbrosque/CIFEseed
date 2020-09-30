@@ -79,4 +79,5 @@ set (CS225A_BINARY_DIR ${PROJECT_SOURCE_DIR}/bin)
 
 # add_subdirectory(project_starter_code)
 add_subdirectory(construction)
+add_subdirectory(joint)
 add_subdirectory(gui-construction)

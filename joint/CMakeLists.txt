@@ -1,0 +1,35 @@
+# - SAI2-URDF
+find_package(SAI2-PRIMITIVES REQUIRED)
+include_directories(${SAI2-PRIMITIVES_INCLUDE_DIRS})
+add_definitions(${SAI2-PRIMITIVES_DEFINITIONS})
+
+# create an executable
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CS225A_BINARY_DIR}/construction)
+ADD_EXECUTABLE (simviz2 simviz2.cpp ${CS225A_COMMON_SOURCE})
+ADD_EXECUTABLE (controller2 controller2.cpp ${CS225A_COMMON_SOURCE})
+# ADD_EXECUTABLE (simulation simulation.cpp ${CS225A_COMMON_SOURCE})
+
+# and link the library against the executable
+TARGET_LINK_LIBRARIES (simviz2 ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
+TARGET_LINK_LIBRARIES (controller2 ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
+# TARGET_LINK_LIBRARIES (simulation ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
+
+# copy example interface to output
+FILE(COPY gui-construction.html DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+# export resources such as model files.
+# NOTE: this requires an install build
+SET(APP_RESOURCE_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources)
+FILE(MAKE_DIRECTORY ${APP_RESOURCE_DIR})
+FILE(COPY mmp_panda.urdf DESTINATION ${APP_RESOURCE_DIR})
+FILE(COPY panda_arm.urdf DESTINATION ${APP_RESOURCE_DIR})
+FILE(COPY panda_arm_drill.urdf DESTINATION ${APP_RESOURCE_DIR})
+FILE(COPY world2.urdf DESTINATION ${APP_RESOURCE_DIR})
+# FILE(COPY mmp_panda_tool_no_collision.urdf DESTINATION ${APP_RESOURCE_DIR})
+# FILE(COPY mmp_panda_tool_collision.urdf DESTINATION ${APP_RESOURCE_DIR})
+
+# copy in sai2-interfaces
+FILE(COPY ${SAI2-INTERFACES_UI_DIR} DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+
+# copy launch script
+FILE(COPY launch.sh DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
