@@ -21,7 +21,7 @@
 using namespace Eigen;
 
 // redis keys
-constexpr const char *world_file = "resources/world.urdf";
+constexpr const char *world_file = "resources/world2.urdf";
 constexpr const char *robot_name = "mmp_panda";
 constexpr const char *camera_name = "camera_fixed";
 constexpr const char *SIM_TITLE = "SAI2.0 Example - Mobile Panda";

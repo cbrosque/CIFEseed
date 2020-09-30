@@ -4,7 +4,7 @@ include_directories(${SAI2-PRIMITIVES_INCLUDE_DIRS})
 add_definitions(${SAI2-PRIMITIVES_DEFINITIONS})
 
 # create an executable
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CS225A_BINARY_DIR}/construction)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CS225A_BINARY_DIR}/joint)
 ADD_EXECUTABLE (simviz2 simviz2.cpp ${CS225A_COMMON_SOURCE})
 ADD_EXECUTABLE (controller2 controller2.cpp ${CS225A_COMMON_SOURCE})
 # ADD_EXECUTABLE (simulation simulation.cpp ${CS225A_COMMON_SOURCE})

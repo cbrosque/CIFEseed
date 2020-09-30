@@ -37,7 +37,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="../../../model/mmp_panda_tall/meshes/WideBase.obj" />
+        <mesh filename="../../../model/mmp_panda_tall/meshes/panda_TallBaseCombo.obj" />
       </geometry>
     </visual>
   </link>
