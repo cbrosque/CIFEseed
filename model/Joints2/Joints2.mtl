@@ -1,8 +1,22 @@
-# Wavefront material file
-# Created with Visionworkplace.com product
+# Blender MTL File: 'joint.blend'
+# Material Count: 2
+
 newmtl material_0
-Kd 0 0 0
-d 1
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.057804 0.057804 0.057804
+Ks 0.000000 0.000000 0.000000
+Ke 0.022640 0.022640 0.022640
+Ni 1.450000
+d 1.000000
+illum 1
+
 newmtl material_1
-Kd 0.5882353 0.5882353 0.5882353
-d 1
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.588235 0.588235 0.588235
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1

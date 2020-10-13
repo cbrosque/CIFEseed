@@ -1,6 +1,6 @@
-# Blender v2.82 (sub 7) OBJ File: ''
+# Blender v2.82 (sub 7) OBJ File: 'joint.blend'
 # www.blender.org
-mtllib Joints2.mtl
+mtllib Joints3.mtl
 o Joints_full
 v -0.693500 -3.914800 -0.065000
 v -5.693500 -3.914800 -0.065000
