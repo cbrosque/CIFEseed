@@ -1,6 +1,6 @@
-# Blender v2.82 (sub 7) OBJ File: ''
+# Blender v2.82 (sub 7) OBJ File: 'weld.blend'
 # www.blender.org
-mtllib weld.mtl
+mtllib weld2.mtl
 o Weldingrevit
 v 0.377378 2.007800 -0.152400
 v -6.079823 2.007800 -0.152400
@@ -702,6 +702,7 @@ vn 0.8695 0.4939 0.0000
 vn -0.8695 0.4939 0.0000
 vn -0.8694 0.4941 0.0000
 vn -0.8645 -0.5025 0.0000
+g Weldingrevit_Weldingrevit_material_0
 usemtl material_0
 s off
 f 1//1 2//1 3//1
@@ -728,6 +729,7 @@ f 9//4 12//4 15//4
 f 13//4 15//4 12//4
 f 10//5 9//5 15//5
 f 15//5 16//5 10//5
+g Weldingrevit_Weldingrevit_material_1
 usemtl material_1
 f 17//2 18//2 19//2
 f 18//2 17//2 20//2
@@ -1973,6 +1975,7 @@ f 647//3 648//3 649//3
 f 649//3 650//3 647//3
 f 651//3 652//3 647//3
 f 647//3 653//3 651//3
+g Weldingrevit_Weldingrevit_material_2
 usemtl material_2
 f 465//1 466//1 467//1
 f 466//1 465//1 468//1
