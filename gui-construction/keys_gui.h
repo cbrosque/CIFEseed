@@ -65,7 +65,7 @@ constexpr const char *VEL_SAT_JOINT_KEY = "sai2::examples::joint_velocity_satura
 constexpr const char *DYN_DEC_JOINT_KEY = "sai2::examples::joint_dynamic_decoupling";
 
 // robot file
-constexpr const char *ROBOT_FILE = "resources/mmp_panda.urdf";
+constexpr const char *ROBOT_FILE = "resources/mmp_panda3.urdf";
 
 // state-related keys
 constexpr const char *PRIMITIVE_KEY = "sai2::examples::primitive";

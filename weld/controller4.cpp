@@ -18,7 +18,7 @@ void sighandler(int sig)
 using namespace std;
 using namespace Eigen;
 
-const string robot_file = "./resources/mmp_panda.urdf";
+const string robot_file = "./resources/mmp_panda3.urdf";
 
 #define A_SIDE_BASE_NAV       1
 #define A_SIDE_ELEV           2

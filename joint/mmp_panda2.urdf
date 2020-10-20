@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='utf-8'?>
+
+<robot name="mmp_panda" version="1.0">
+
+  <!-- GROUND LINK -->
+  <link name ="ground_link">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <mass value="0.001" />
+      <inertia ixx="1E-06" ixy="0.0" ixz="0.0" iyy="1E-06" iyz="0.0" izz="1E-06" />
+    </inertial>
+  </link>
+
+
+  <!-- MOBILE BASE LINKS -->
+  <link name ="base_x">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <mass value="0.001" />
+      <inertia ixx="1E-06" ixy="0.0" ixz="0.0" iyy="1E-06" iyz="0.0" izz="1E-06" />
+    </inertial>
+  </link>
+
+  <link name = "base_y">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <mass value = "0.001" />
+      <inertia ixx="1E-06" ixy="0.0" ixz="0.0" iyy="1E-06" iyz="0.0" izz="1E-06" />
+    </inertial>
+  </link>
+
+  <link name = "base_theta">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <mass value = "2230" />
+      <inertia ixx="285" ixy="0.0" ixz="0.0" iyy="546" iyz="0.0" izz="700" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="../../../model/jointcart/jointcart.obj" />
+      </geometry>
+    </visual>
+  </link>
+
+
+  <!-- MOBILE BASE + LINK 0 OF PANDA ARM -->
+  <link name = "base_fix">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <mass value = "0.001" />
+      <inertia ixx="1E-06" ixy="0.0" ixz="0.0" iyy="1E-06" iyz="0.0" izz="1E-06" />
+    </inertial>
+  </link>
+
+  <link name = "base_z">
+    <inertial>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <mass value = "64.6" />
+      <inertia ixx="1.721" ixy="0.0" ixz="0.0" iyy="1.712" iyz="0.0" izz="2.030" />
+    </inertial>
+    <visual>
+      <geometry>
+        <mesh filename="../../../model/jointcart/jointcart.obj" />
+      </geometry>
+    </visual>
+  </link>
+
+
+  <!-- JOINTS -->
+  <joint name = "base_prismatic_x" type = "prismatic">
+    <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    <parent link = "ground_link" />
+    <child link= "base_x"/>
+    <axis xyz = "1 0 0" />
+    <calibration rising="0.0" />
+    <limit effort="87" lower="-5" upper="5" velocity="0.2" />
+  </joint>
+
+  <joint name = "base_prismatic_y" type = "prismatic">
+    <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    <parent link = "base_x" />
+    <child link= "base_y"/>
+    <axis xyz = "0 1 0" />
+    <calibration rising="0.0" />
+    <limit effort="87" lower="-5" upper="5" velocity="0.2" />
+  </joint>
+
+  <joint name = "base_revolute" type = "revolute">
+    <origin xyz = "0 0 0.0" rpy = "0 0 0"/>
+    <parent link = "base_y" />
+    <child link= "base_theta"/>
+    <axis xyz = "0 0 1" />
+    <calibration falling="0.0" />
+    <limit effort="87" lower="-2.8973" upper="2.8973" velocity="2.1750" />
+  </joint>
+
+  <joint name = "base_fixed" type = "fixed">
+    <origin xyz = "0 0 0" rpy = "0 0 1.57079632679"/>
+    <parent link = "base_theta" />
+    <child link= "base_fix"/>
+    <axis xyz = "0 0 1" />
+    <calibration rising="0.0" />
+    <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
+  </joint>
+
+  <joint name = "base_prismatic_z" type = "prismatic">
+    <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    <parent link = "base_fix" />
+    <child link= "base_z"/>
+    <axis xyz = "0 0 1" />
+    <calibration rising="1.2" />
+    <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
+  </joint>
+
+  
+
+</robot>
