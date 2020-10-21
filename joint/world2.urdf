@@ -4,7 +4,7 @@
 
     <robot name="mmp_panda">
         <model dir="./resources" path="mmp_panda2.urdf" name="mmp_panda" />
-        <origin xyz="0 0 -0.5" rpy="0 0 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
     </robot>
 
     <!--<static_object name="Floor">
@@ -28,16 +28,16 @@
     </static_object> -->
 
     <static_object name = "joint">
-        <origin xyz="0 0 0" rpy="0 0 0" />
+        <origin xyz="0 0 -0.30" rpy="0 0 0" />
         <visual>
-            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0 0.0 0" rpy="0 0 0" />
             <geometry>
                 <mesh filename="./resources/../../../model/Joints2/Joints2.obj" scale="1.0 1.0 1.0"/>
                 <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
             </geometry>
         </visual>
         <collision>
-            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <origin xyz="0.0 0.0 0" rpy="0 0 0" />
             <geometry>
                 <mesh filename="./resources/../../../model/Joints2/Joints2.obj" scale="1.0 1.0 1.0"/>
                 <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
