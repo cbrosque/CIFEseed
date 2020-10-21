@@ -37,7 +37,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="../../../model/jointcart/jointcart.obj" />
+        <mesh filename="../../../model/jointcart2/joint cart2.obj" />
       </geometry>
     </visual>
   </link>
@@ -60,7 +60,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="../../../model/jointcart/jointcart.obj" />
+        <mesh filename="../../../model/jointcart2/joint cart2.obj" />
       </geometry>
     </visual>
   </link>
