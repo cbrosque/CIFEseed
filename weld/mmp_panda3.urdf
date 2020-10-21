@@ -195,7 +195,7 @@
     <visual>
       <geometry>
         <!-- <mesh filename="../../../model/Drill2_Full_Bolt/Drill2_Full_Bolt.obj"/> -->
-        <mesh filename="../../../model/Drill_NoBolt/drill_nobolt.obj"/>
+        <mesh filename="../../../model/weldtool/weldtool.obj"/>
       </geometry>
     </visual>
     <!--collision>
