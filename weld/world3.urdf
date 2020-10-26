@@ -4,7 +4,7 @@
 
     <robot name="mmp_panda">
         <model dir="./resources" path="mmp_panda3.urdf" name="mmp_panda" />
-        <origin xyz="0 0 0.15" rpy="0 0 0" />
+        <origin xyz="0 0 0.0" rpy="0 0 0" />
     </robot>
 
     <!--<static_object name="Floor">
@@ -76,8 +76,8 @@
     </light> -->
 
     <camera name="camera_fixed">
-        <position xyz="0.0 0.0 1.5" />
-        <vertical xyz="0.0 0.0 1.0" />
+        <position xyz="0.0 2.0 1.5" />
+        <vertical xyz="0.0 0.0 2.0" />
         <lookat xyz="0.0 2.17 0.5" />
     </camera>
 
