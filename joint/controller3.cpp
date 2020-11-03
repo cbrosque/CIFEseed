@@ -22,13 +22,14 @@ const string robot_file = "./resources/mmp_panda2.urdf";
 
 #define A_SIDE_BASE_NAV       1
 #define A_SIDE_BASE_NAV2      2
+#define A_SIDE_BASE_NAV3      3
 
 
 
 int state = A_SIDE_BASE_NAV;
-int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
-int pull_counter = 0; // counter to check if drill is going into our out of hole
-int drop_counter = 0; // Counter to check if arm is dropping after A-side, or after B-side
+//int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
+//int pull_counter = 0; // counter to check if drill is going into our out of hole
+//int drop_counter = 0; // Counter to check if arm is dropping after A-side, or after B-side
 
 
 // redis keys:
@@ -75,29 +76,29 @@ int main() {
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
 
 	/*** SET UP POSORI TASK***/
-	const string control_link = "linkTool";
-	const Vector3d control_point = Vector3d(0,0.104,0.203);
-	auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
+	//const string control_link = "linkTool";
+	//const Vector3d control_point = Vector3d(0,0.104,0.203);
+	//auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
 
-	#ifdef USING_OTG
-		posori_task->_use_interpolation_flag = true; //maybe on false
-	#else
-		posori_task->_use_velocity_saturation_flag = true;
-	#endif
+	//#ifdef USING_OTG
+		//posori_task->_use_interpolation_flag = true; //maybe on false
+	//#else
+		//posori_task->_use_velocity_saturation_flag = true;
+	//#endif
 
-	posori_task->_linear_saturation_velocity = 0.05; // set new slower velocity (to help visualize)
+	//posori_task->_linear_saturation_velocity = 0.05; // set new slower velocity (to help visualize)
 
 	// controller gains
-	VectorXd posori_task_torques = VectorXd::Zero(dof);
-	posori_task->_kp_pos = 200.0; // 200.0
-	posori_task->_kv_pos = 20.0; // 20.0
-	posori_task->_kp_ori = 200.0;
-	posori_task->_kv_ori = 20.0;
+	//VectorXd posori_task_torques = VectorXd::Zero(dof);
+	//posori_task->_kp_pos = 200.0; // 200.0
+	//posori_task->_kv_pos = 20.0; // 20.0
+	//posori_task->_kp_ori = 200.0;
+	//posori_task->_kv_ori = 20.0;
 
 	// controller desired positions
 	double tolerance = 0.001;
-	Vector3d x_des = Vector3d::Zero(3);
-	MatrixXd ori_des = Matrix3d::Zero();
+	//Vector3d x_des = Vector3d::Zero(3);
+	//MatrixXd ori_des = Matrix3d::Zero();
 
 	/*** SET UP JOINT TASK ***/
 	auto joint_task = new Sai2Primitives::JointTask(robot);
@@ -141,17 +142,19 @@ int main() {
 		if(controller_counter % 200 == 0) // %1000
 		{
 			cout << "current state: " << state << "\n";
-			cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
+			//cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
 			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
 			cout << "arm joint angles:" << robot->_q(4) << " " << robot->_q(5) << " " << robot->_q(6) << " " <<
 										robot->_q(7) << " " << robot->_q(8) << " " << robot->_q(9) << " " << robot->_q(10) << endl;
-			cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
+			//cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
 			cout << endl; 
 			// cout << "counter: " << controller_counter << "\n";
 		}
 
 		// state switching
-		if(state == A_SIDE_BASE_NAV){ 
+		if(controller_counter % 500 == 0)
+		{	
+			state = A_SIDE_BASE_NAV; 
 			// Set desired task position
 			q_des << initial_q;
 			q_des(0) = 0;
@@ -159,39 +162,43 @@ int main() {
 			q_des(2) = 0;
 
 			// Set desired orientation
-			ori_des.setIdentity();
+			//ori_des.setIdentity();
 
-			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-				q_des << robot->_q; // set desired joint angles
+			if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
+			joint_task->reInitializeTask();
+				//posori_task->reInitializeTask();
+			q_des << robot->_q; // set desired joint angles
 
-				state = A_SIDE_BASE_NAV2; // advance to next state
+			state = A_SIDE_BASE_NAV2; // advance to next state
 			}
-
 		}
 
-		else if(state == A_SIDE_BASE_NAV2){ //
+		if(state = A_SIDE_BASE_NAV2){ //
 			// Set new position for opposite side of hole (i.e. add wall thickness)
-			q_des << initial_q;
-			q_des(0) = 0;
-			q_des(1) = -2;
+			//q_des << initial_q;
+			q_des(0) = 1;
+			q_des(1) = -2.5;
 			q_des(2) = 0;
 
-			// Set desired orientation
-			ori_des.setIdentity();
+			if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
+			joint_task->reInitializeTask();
+				//posori_task->reInitializeTask();
+			q_des << robot->_q; // set desired joint angles
 
-			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-				joint_task->reInitializeTask();
-				posori_task->reInitializeTask();
-				q_des << robot->_q; // set desired joint angles
-
-               } 
+			state = A_SIDE_BASE_NAV3; // advance to next state
 			}
+		}
 		
+		if(state = A_SIDE_BASE_NAV3){ //
+			// Set new position for opposite side of hole (i.e. add wall thickness)
+			//q_des << initial_q;
+			q_des(0) = 1.5;
+			q_des(1) = -2.5;
+			q_des(2) = 0;
+		}
 
 
-		if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2){
+		if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3){
 			/*** PRIMARY JOINT CONTROL***/
 
 			joint_task->_desired_position = q_des;
@@ -206,29 +213,29 @@ int main() {
 			command_torques = joint_task_torques;
 
 		}
-		else{
+		//else{
 			/*** PRIMARY POSORI CONTROL W/ JOINT CONTROL IN NULLSPACE***/
 			// update controlller posiitons
-			posori_task->_desired_position = x_des;
-			posori_task->_desired_orientation = ori_des;
-			joint_task->_desired_position = q_des;
+			//posori_task->_desired_position = x_des;
+			//posori_task->_desired_orientation = ori_des;
+			//joint_task->_desired_position = q_des;
 
 			// update task model and set hierarchy
-			N_prec.setIdentity();
-			posori_task->updateTaskModel(N_prec);
-			N_prec = posori_task->_N;
-			joint_task->updateTaskModel(N_prec);
+			//N_prec.setIdentity();
+			//posori_task->updateTaskModel(N_prec);
+			//N_prec = posori_task->_N;
+			//joint_task->updateTaskModel(N_prec);
 
 			// compute torques
-			posori_task->computeTorques(posori_task_torques);
-			joint_task->computeTorques(joint_task_torques);
+			//posori_task->computeTorques(posori_task_torques);
+			//joint_task->computeTorques(joint_task_torques);
 
-			command_torques = posori_task_torques + joint_task_torques;
-			command_torques(0) = joint_task_torques(0);
-			command_torques(1) = joint_task_torques(1);
-			command_torques(2) = joint_task_torques(2);
+			//command_torques = posori_task_torques + joint_task_torques;
+			//command_torques(0) = joint_task_torques(0);
+			//command_torques(1) = joint_task_torques(1);
+			//command_torques(2) = joint_task_torques(2);
 
-		}
+		//}
 
 
 
@@ -247,3 +254,4 @@ int main() {
 
 	return 0;
 }
+
