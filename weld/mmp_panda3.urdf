@@ -59,9 +59,15 @@
       <inertia ixx="1.721" ixy="0.0" ixz="0.0" iyy="1.712" iyz="0.0" izz="2.030" />
     </inertial>
     <visual>
-      <geometry>
-        <mesh filename="../../../model/mmp_panda_tall/meshes/panda_TallBaseCombo.obj" />
-      </geometry>
+          <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+          <geometry>
+            <!--<cylinder size="0.5 0.5 0.5" />
+          </geometry>
+          <material name="material_gray">
+            <color rgba="0.6 0.6 0.6 1.0" />
+          </material>-->
+            <mesh filename="../../../model/mmp_panda_tall/meshes/panda_TallBaseCombo.obj" />
+          </geometry> -->
     </visual>
   </link>
 
