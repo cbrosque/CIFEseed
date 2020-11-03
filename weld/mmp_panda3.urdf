@@ -66,7 +66,7 @@
           <material name="material_gray">
             <color rgba="0.6 0.6 0.6 1.0" />
           </material>-->
-            <mesh filename="../../../model/mmp_panda_tall/meshes/panda_TallBaseCombo.obj" />
+            <mesh filename="../../../model/mmp_panda_tall/meshes/panda_base.obj" />
           </geometry> -->
     </visual>
   </link>

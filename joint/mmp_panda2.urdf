@@ -65,6 +65,23 @@
     </visual>
   </link>
 
+<!-- PRISMATIC LINK -->
+  <link name="linkTool">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.02" />
+      <inertia ixx="0.3" iyy="0.3" izz="0.3" ixy="0" ixz="0" iyz="0" />
+    </inertial>
+    <visual>
+      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.01" length="0.1" />
+      </geometry>
+        <material name="material_cyan">
+          <color rgba="0 1.0 1.0 1.0" />
+        </material>
+    </visual>
+  </link>
 
   <!-- JOINTS -->
   <joint name = "base_prismatic_x" type = "prismatic">
@@ -112,6 +129,14 @@
     <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
   </joint> -->
 
+  <joint name = "jointTool" type = "prismatic">
+    <origin xyz = "0 0 0" rpy = "0 0 2"/>
+    <parent link = "base_fix" />
+    <child link= "linkTool"/>
+    <axis xyz = "0 0 1" />
+    <calibration rising="0.0" />
+    <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
+  </joint>
   
 
 </robot>

@@ -23,6 +23,7 @@ const string robot_file = "./resources/mmp_panda2.urdf";
 #define A_SIDE_BASE_NAV       1
 #define A_SIDE_BASE_NAV2      2
 #define A_SIDE_BASE_NAV3      3
+#define A_SIDE_BASE_NAV4      4
 
 
 
@@ -139,20 +140,19 @@ int main() {
 		// update model
 		robot->updateModel();
 
-		if(controller_counter % 200 == 0) // %1000
+		if(controller_counter % 100 == 0) // %1000
 		{
 			cout << "current state: " << state << "\n";
 			//cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
 			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
-			cout << "arm joint angles:" << robot->_q(4) << " " << robot->_q(5) << " " << robot->_q(6) << " " <<
-										robot->_q(7) << " " << robot->_q(8) << " " << robot->_q(9) << " " << robot->_q(10) << endl;
+			cout << "arm joint angles:" << robot->_q(4) << " " << endl;
 			//cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
 			cout << endl; 
 			// cout << "counter: " << controller_counter << "\n";
 		}
 
 		// state switching
-		if(controller_counter % 500 == 0)
+		if(controller_counter % 1000 == 0)
 		{	
 			state = A_SIDE_BASE_NAV; 
 			// Set desired task position
@@ -160,6 +160,8 @@ int main() {
 			q_des(0) = 0;
 			q_des(1) = 0;
 			q_des(2) = 0;
+			q_des(3) = 0;
+			q_des(4) = 0;
 
 			// Set desired orientation
 			//ori_des.setIdentity();
@@ -173,32 +175,44 @@ int main() {
 			}
 		}
 
-		if(state = A_SIDE_BASE_NAV2){ //
+		if(controller_counter % 3000 == 0){
+			state = A_SIDE_BASE_NAV2; //
+			// Set new position for opposite side of hole (i.e. add wall thickness)
+			//q_des << initial_q;
+			q_des(0) = 1;
+			q_des(1) = 0;
+			q_des(2) = 0;
+			q_des(3) = 0;
+			q_des(4) = 0;
+
+		}
+		
+		if(controller_counter % 5000 == 0){
+			state = A_SIDE_BASE_NAV3; //
 			// Set new position for opposite side of hole (i.e. add wall thickness)
 			//q_des << initial_q;
 			q_des(0) = 1;
 			q_des(1) = -2.5;
 			q_des(2) = 0;
+			q_des(3) = 0;
+			q_des(4) = 0;
 
-			if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-			joint_task->reInitializeTask();
-				//posori_task->reInitializeTask();
-			q_des << robot->_q; // set desired joint angles
-
-			state = A_SIDE_BASE_NAV3; // advance to next state
-			}
 		}
-		
-		if(state = A_SIDE_BASE_NAV3){ //
+
+		if(controller_counter % 7000 == 0){
+
+			state = A_SIDE_BASE_NAV4; //
 			// Set new position for opposite side of hole (i.e. add wall thickness)
 			//q_des << initial_q;
-			q_des(0) = 1.5;
-			q_des(1) = -2.5;
+			q_des(0) = -1;
+			q_des(1) = 0;
 			q_des(2) = 0;
+			q_des(3) = 0;
+			q_des(4) = -0.1;
+
 		}
 
-
-		if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3){
+		if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3 || state == A_SIDE_BASE_NAV4){
 			/*** PRIMARY JOINT CONTROL***/
 
 			joint_task->_desired_position = q_des;
