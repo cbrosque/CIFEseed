@@ -78,7 +78,9 @@ set(CS225A_COMMON_LIBRARIES
 set (CS225A_BINARY_DIR ${PROJECT_SOURCE_DIR}/bin)
 
 # add_subdirectory(project_starter_code)
-add_subdirectory(construction)
+add_subdirectory(bolting_two_arms)
 add_subdirectory(joint)
 add_subdirectory(weld)
 add_subdirectory(gui-construction)
+add_subdirectory(bolting_cs225a)
+# add_subdirectory(gui-seed)
