@@ -20,14 +20,18 @@ using namespace Eigen;
 
 const string robot_file = "./resources/mmp_panda2.urdf";
 
-#define A_SIDE_BASE_NAV       1
-#define A_SIDE_BASE_NAV2      2
-#define A_SIDE_BASE_NAV3      3
-#define A_SIDE_BASE_NAV4      4
+// State Machine Definition
+#define MOVE_TO_GROOVE		1 // This is the state in which the robot is moving from start to the groove (joint space control)
+#define INSERT_NOZZLE			2 // This is the state in which the end effector is lowered into the groove (task space control)
+#define POUR_CONCRETE			3 // This is the state in which the robot base moves while keeping the nozzle flush (task space control)
+#define PAUSE_POURING			4 // This is the state in which the robot stops moving and pouring and withdraws the nozzle (joint space control)
 
+// #define A_SIDE_BASE_NAV       1
+// #define A_SIDE_BASE_NAV2      2
+// #define A_SIDE_BASE_NAV3      3
+// #define A_SIDE_BASE_NAV4      4
 
-
-int state = A_SIDE_BASE_NAV;
+int state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV;
 //int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
 //int pull_counter = 0; // counter to check if drill is going into our out of hole
 //int drop_counter = 0; // Counter to check if arm is dropping after A-side, or after B-side
@@ -140,6 +144,21 @@ int main() {
 		// update model
 		robot->updateModel();
 
+		// if (controller_counter == 0) {
+		// 	q_des << initial_q;
+		// }
+		// 
+		// if (state == MOVE_TO_GROOVE && (robot->_q - q_des).norm() < tolerance) {
+		// 	if (controller_counter == 0) {
+		// 		// Update goal position
+		// 		q_des(0) = 1.5;
+		// 		q_des(1) = 0;
+		// 		q_des(2) = 0;
+		// 		q_des(3) = 0;
+		// 		q_des(4) = 0;
+		// 	}
+		// }
+
 		if(controller_counter % 100 == 0) // %1000
 		{
 			cout << "current state: " << state << "\n";
@@ -147,18 +166,18 @@ int main() {
 			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
 			cout << "arm joint angles:" << robot->_q(4) << " " << endl;
 			//cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
-			cout << endl; 
+			cout << endl;
 			// cout << "counter: " << controller_counter << "\n";
 		}
 
 		// state switching
 		if(controller_counter % 1000 == 0)
-		{	
-			state = A_SIDE_BASE_NAV; 
+		{
+			state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV;
 			// Set desired task position
 			q_des << initial_q;
-			q_des(0) = 0;
-			q_des(1) = 0;
+			q_des(0) = 1.5;
+			q_des(1) = -1.5;
 			q_des(2) = 0;
 			q_des(3) = 0;
 			q_des(4) = 0;
@@ -167,52 +186,53 @@ int main() {
 			//ori_des.setIdentity();
 
 			if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-			joint_task->reInitializeTask();
+				joint_task->reInitializeTask();
 				//posori_task->reInitializeTask();
-			q_des << robot->_q; // set desired joint angles
+				q_des << robot->_q; // set desired joint angles
 
-			state = A_SIDE_BASE_NAV2; // advance to next state
+				state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV2; // advance to next state
+				cout << "Reached goal position\n";
 			}
 		}
 
-		if(controller_counter % 3000 == 0){
-			state = A_SIDE_BASE_NAV2; //
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//q_des << initial_q;
-			q_des(0) = 1;
-			q_des(1) = 0;
-			q_des(2) = 0;
-			q_des(3) = 0;
-			q_des(4) = 0;
+		// if(controller_counter % 3000 == 0){
+		// 	state = A_SIDE_BASE_NAV2; //
+		// 	// Set new position for opposite side of hole (i.e. add wall thickness)
+		// 	//q_des << initial_q;
+		// 	q_des(0) = 1;
+		// 	q_des(1) = 0;
+		// 	q_des(2) = 0;
+		// 	q_des(3) = 0;
+		// 	q_des(4) = 0;
+		//
+		// }
+		//
+		// if(controller_counter % 5000 == 0){
+		// 	state = A_SIDE_BASE_NAV3; //
+		// 	// Set new position for opposite side of hole (i.e. add wall thickness)
+		// 	//q_des << initial_q;
+		// 	q_des(0) = 1;
+		// 	q_des(1) = -2.5;
+		// 	q_des(2) = 0;
+		// 	q_des(3) = 0;
+		// 	q_des(4) = 0;
+		//
+		// }
+		//
+		// if(controller_counter % 7000 == 0){
+		//
+		// 	state = A_SIDE_BASE_NAV4; //
+		// 	// Set new position for opposite side of hole (i.e. add wall thickness)
+		// 	//q_des << initial_q;
+		// 	q_des(0) = -1;
+		// 	q_des(1) = 0;
+		// 	q_des(2) = 0;
+		// 	q_des(3) = 0;
+		// 	q_des(4) = -0.1;
+		//
+		// }
 
-		}
-		
-		if(controller_counter % 5000 == 0){
-			state = A_SIDE_BASE_NAV3; //
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//q_des << initial_q;
-			q_des(0) = 1;
-			q_des(1) = -2.5;
-			q_des(2) = 0;
-			q_des(3) = 0;
-			q_des(4) = 0;
-
-		}
-
-		if(controller_counter % 7000 == 0){
-
-			state = A_SIDE_BASE_NAV4; //
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//q_des << initial_q;
-			q_des(0) = -1;
-			q_des(1) = 0;
-			q_des(2) = 0;
-			q_des(3) = 0;
-			q_des(4) = -0.1;
-
-		}
-
-		if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3 || state == A_SIDE_BASE_NAV4){
+		if (state == MOVE_TO_GROOVE) {//if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3 || state == A_SIDE_BASE_NAV4){
 			/*** PRIMARY JOINT CONTROL***/
 
 			joint_task->_desired_position = q_des;
@@ -268,4 +288,3 @@ int main() {
 
 	return 0;
 }
-
