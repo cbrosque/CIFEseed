@@ -23,14 +23,11 @@ const string robot_file = "./resources/mmp_panda2.urdf";
 // State Machine Definition
 #define MOVING 						1	// Moving with nozzle up (joint space)
 #define NOZZLE_DOWN				2	// Move nozzle down until force felt exceeds threshold (task space)
-#define POURING_RIGHT			3	// Track the groove and move right until force felt changes (task space?) -- or just move to next spot
-#define STOPPED						4	// Pause for 100 controller loop cycles
+#define POURING_RIGHT			3	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
+#define POSITION_HOLD			4	// Pause for 100 controller loop cycles
 #define NOZZLE_UP					5	// Move nozzle up back to initial position
 
-int state = STOPPED; //A_SIDE_BASE_NAV;
-//int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
-//int pull_counter = 0; // counter to check if drill is going into our out of hole
-//int drop_counter = 0; // Counter to check if arm is dropping after A-side, or after B-side
+int state = STOPPED;
 
 
 // redis keys:
@@ -143,24 +140,40 @@ int main() {
 		robot->updateModel();
 
 		// Every 100 cycles, print the angles and current state
-		// if(controller_counter % 100 == 0) // %1000
-		// {
-		// 	cout << "current state: " << state << "\n";
-		// 	//cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
-		// 	cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
-		// 	cout << "arm joint angles:" << robot->_q(4) << " " << endl;
-		// 	//cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
-		// 	cout << endl;
-		// 	// cout << "counter: " << controller_counter << "\n";
-		// }
-
-		// After 100 counts, set state to moving
-		if (state == STOPPED && controller_counter - lastStopped == 100) {
-			state = MOVING;
-			// set q_desired to the required position
-			// if the robot is in the desired position already, switch states to get the nozzle down
+		if(controller_counter % 1000 == 0) // %1000
+		{
+			cout << "current state: " << state << "\n";
+			//cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
+			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
+			cout << "arm joint angles:" << robot->_q(4) << " " << endl;
+			//cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
+			cout << endl;
+			// cout << "counter: " << controller_counter << "\n";
 		}
 
+		if (state == HOME) {
+			q_des << initial_q;
+		}
+
+		else if (state == MOVING) {
+			
+		}
+
+		else if (state == POSITION_HOLD) {
+
+		}
+
+		else if (state == NOZZLE_UP) {
+
+		}
+
+		else if (state == NOZZLE_DOWN) {
+
+		}
+
+		else if (state == POURING_RIGHT) {
+
+		}
 
 		// state switching
 		if(controller_counter % 1000 == 0)
