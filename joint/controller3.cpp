@@ -21,13 +21,14 @@ using namespace Eigen;
 const string robot_file = "./resources/mmp_panda2.urdf";
 
 // State Machine Definition
-#define MOVING 						1	// Moving with nozzle up (joint space)
-#define NOZZLE_DOWN				2	// Move nozzle down until force felt exceeds threshold (task space)
-#define POURING_RIGHT			3	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
-#define POSITION_HOLD			4	// Pause for 100 controller loop cycles
-#define NOZZLE_UP					5	// Move nozzle up back to initial position
+#define INITIAL_POS				1 // Starting position
+#define MOVING 						2	// Moving with nozzle up (joint space)
+#define NOZZLE_DOWN				3	// Move nozzle down until force felt exceeds threshold (task space)
+#define POURING_RIGHT			4	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
+#define POSITION_HOLD			5	// Pause for 100 controller loop cycles
+#define NOZZLE_UP					6	// Move nozzle up back to initial position
 
-int state = STOPPED;
+int state = INITIAL_POS;
 
 
 // redis keys:
@@ -72,6 +73,12 @@ int main() {
 	int dof = robot->dof();
 	VectorXd command_torques = VectorXd::Zero(dof);
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
+
+	// Set up positions for each task
+	VectorXd pos1a = VectorXd::Zero(dof);
+	VectorXd pos1b = VectorXd::Zero(dof);
+	pos1a << 1.5, 1.5, 0.0, 0.0, 0.0;
+	pos1b << 1.5, 1.0, 0.0, 0.0, 0.0;
 
 	/*** SET UP POSORI TASK***/
 	//const string control_link = "linkTool";
@@ -151,70 +158,80 @@ int main() {
 			// cout << "counter: " << controller_counter << "\n";
 		}
 
-		if (state == HOME) {
-			q_des << initial_q;
+		if (state == INITIAL_POS) {
+			joint_task->reInitializeTask();
+			q_des << pos1a;
+			state = MOVING;
 		}
 
 		else if (state == MOVING) {
-			
-		}
-
-		else if (state == POSITION_HOLD) {
-
-		}
-
-		else if (state == NOZZLE_UP) {
-
-		}
-
-		else if (state == NOZZLE_DOWN) {
-
-		}
-
-		else if (state == POURING_RIGHT) {
-
-		}
-
-		// state switching
-		if(controller_counter % 1000 == 0)
-		{
-			state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV;
-			// Set desired task position
-			q_des << initial_q;
-			q_des(0) = 1.5;
-			q_des(1) = -1.5;
-			q_des(2) = 0;
-			q_des(3) = 0;
-			q_des(4) = 0;
-
-			// Set desired orientation
-			//ori_des.setIdentity();
-
-			if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
+			cout << "Made it to moving state\n";
+			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
+				cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
-				//posori_task->reInitializeTask();
-				q_des << robot->_q; // set desired joint angles
+				// posori_task->reInitializeTask();
+				q_des << pos1b; // set desired joint angles
 
-				state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV2; // advance to next state
-				cout << "Reached goal position\n";
+				state = POSITION_HOLD; // advance to next state
 			}
 		}
 
-		if (state == MOVE_TO_GROOVE) {//if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3 || state == A_SIDE_BASE_NAV4){
-			/*** PRIMARY JOINT CONTROL***/
-
-			joint_task->_desired_position = q_des;
-
-			// update task model and set hierarchy
-			N_prec.setIdentity();
-			joint_task->updateTaskModel(N_prec);
-
-			// compute torques
-			joint_task->computeTorques(joint_task_torques);
-
-			command_torques = joint_task_torques;
-
+		else if (state == POSITION_HOLD) {
+			cout << "Made it to position hold\n";
 		}
+
+		// else if (state == NOZZLE_UP) {
+		//
+		// }
+		//
+		// else if (state == NOZZLE_DOWN) {
+		//
+		// }
+		//
+		// else if (state == POURING_RIGHT) {
+		//
+		// }
+
+		// state switching
+		// if(controller_counter % 1000 == 0)
+		// {
+		// 	state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV;
+		// 	// Set desired task position
+		// 	q_des << initial_q;
+		// 	q_des(0) = 1.5;
+		// 	q_des(1) = -1.5;
+		// 	q_des(2) = 0;
+		// 	q_des(3) = 0;
+		// 	q_des(4) = 0;
+		//
+		// 	// Set desired orientation
+		// 	//ori_des.setIdentity();
+		//
+		// 	if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
+		// 		joint_task->reInitializeTask();
+		// 		//posori_task->reInitializeTask();
+		// 		q_des << robot->_q; // set desired joint angles
+		//
+		// 		state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV2; // advance to next state
+		// 		cout << "Reached goal position\n";
+		// 	}
+		// }
+
+		// if (state == MOVE_TO_GROOVE) {//if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3 || state == A_SIDE_BASE_NAV4){
+		// 	/*** PRIMARY JOINT CONTROL***/
+		//
+		// 	joint_task->_desired_position = q_des;
+		//
+		// 	// update task model and set hierarchy
+		// 	N_prec.setIdentity();
+		// 	joint_task->updateTaskModel(N_prec);
+		//
+		// 	// compute torques
+		// 	joint_task->computeTorques(joint_task_torques);
+		//
+		// 	command_torques = joint_task_torques;
+		//
+		// }
 		//else{
 			/*** PRIMARY POSORI CONTROL W/ JOINT CONTROL IN NULLSPACE***/
 			// update controlller posiitons
@@ -238,6 +255,31 @@ int main() {
 			//command_torques(2) = joint_task_torques(2);
 
 		//}
+
+		if (state == MOVING) {
+			/* Primary Joint Task Control */
+			joint_task->_desired_position = q_des;
+
+			// update task model and set hierarchy
+			N_prec.setIdentity();
+			joint_task->updateTaskModel(N_prec);
+
+			// compute torques
+			joint_task->computeTorques(joint_task_torques);
+
+			command_torques = joint_task_torques;
+		} else {
+			joint_task->_desired_position = robot->_q;
+
+			// update task model and set hierarchy
+			N_prec.setIdentity();
+			joint_task->updateTaskModel(N_prec);
+
+			// compute torques
+			joint_task->computeTorques(joint_task_torques);
+
+			command_torques = joint_task_torques;
+		}
 
 		// send to redis
 		redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
