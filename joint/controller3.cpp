@@ -23,9 +23,9 @@ const string robot_file = "./resources/mmp_panda2.urdf";
 // State Machine Definition
 #define INITIAL_POS				1 // Starting position
 #define MOVING 						2	// Moving with nozzle up (joint space)
-#define NOZZLE_DOWN				3	// Move nozzle down until force felt exceeds threshold (task space)
-#define POURING_RIGHT			4	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
-#define POSITION_HOLD			5	// Pause for 100 controller loop cycles
+#define POSITION_HOLD			3	// Pause for 100 controller loop cycles
+#define NOZZLE_DOWN				4	// Move nozzle down until force felt exceeds threshold (task space)
+#define POURING_RIGHT			5	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
 #define NOZZLE_UP					6	// Move nozzle up back to initial position
 
 int state = INITIAL_POS;
@@ -81,29 +81,29 @@ int main() {
 	pos1b << 1.5, 1.0, 0.0, 0.0, 0.0;
 
 	/*** SET UP POSORI TASK***/
-	//const string control_link = "linkTool";
-	//const Vector3d control_point = Vector3d(0,0.104,0.203);
-	//auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
+	const string control_link = "linkTool";
+	const Vector3d control_point = Vector3d(0,0.104,0.203);
+	auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
 
-	//#ifdef USING_OTG
-		//posori_task->_use_interpolation_flag = true; //maybe on false
-	//#else
-		//posori_task->_use_velocity_saturation_flag = true;
-	//#endif
+	#ifdef USING_OTG
+		posori_task->_use_interpolation_flag = true; //maybe on false
+	#else
+		posori_task->_use_velocity_saturation_flag = true;
+	#endif
 
-	//posori_task->_linear_saturation_velocity = 0.05; // set new slower velocity (to help visualize)
+	posori_task->_linear_saturation_velocity = 0.05; // set new slower velocity (to help visualize)
 
 	// controller gains
-	//VectorXd posori_task_torques = VectorXd::Zero(dof);
-	//posori_task->_kp_pos = 200.0; // 200.0
-	//posori_task->_kv_pos = 20.0; // 20.0
-	//posori_task->_kp_ori = 200.0;
-	//posori_task->_kv_ori = 20.0;
+	VectorXd posori_task_torques = VectorXd::Zero(dof);
+	posori_task->_kp_pos = 200.0; // 200.0
+	posori_task->_kv_pos = 20.0; // 20.0
+	posori_task->_kp_ori = 200.0;
+	posori_task->_kv_ori = 20.0;
 
 	// controller desired positions
 	double tolerance = 0.001;
-	//Vector3d x_des = Vector3d::Zero(3);
-	//MatrixXd ori_des = Matrix3d::Zero();
+	Vector3d x_des = Vector3d::Zero(3);
+	MatrixXd ori_des = Matrix3d::Zero();
 
 	/*** SET UP JOINT TASK ***/
 	auto joint_task = new Sai2Primitives::JointTask(robot);
@@ -133,6 +133,7 @@ int main() {
 	bool fTimerDidSleep = true;
 
 	double lastStopped = controller_counter; // Update this when you stop
+	double pauseCounter = 0;
 
 	while (runloop) {
 		// wait for next scheduled loop
@@ -150,12 +151,12 @@ int main() {
 		if(controller_counter % 1000 == 0) // %1000
 		{
 			cout << "current state: " << state << "\n";
-			//cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
+			cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
 			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
 			cout << "arm joint angles:" << robot->_q(4) << " " << endl;
-			//cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
+			cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
 			cout << endl;
-			// cout << "counter: " << controller_counter << "\n";
+			cout << "counter: " << controller_counter << "\n";
 		}
 
 		if (state == INITIAL_POS) {
@@ -165,12 +166,12 @@ int main() {
 		}
 
 		else if (state == MOVING) {
-			cout << "Made it to moving state\n";
+			// cout << "Made it to moving state\n";
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-				cout << "Made it to pos1a\n";
+				// cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
 				// posori_task->reInitializeTask();
-				q_des << pos1b; // set desired joint angles
+				// q_des << pos1b; // set desired joint angles
 
 				state = POSITION_HOLD; // advance to next state
 			}
@@ -178,13 +179,21 @@ int main() {
 
 		else if (state == POSITION_HOLD) {
 			cout << "Made it to position hold\n";
+			// if (pauseCounter == 100) {
+			// 	pauseCounter = 0;
+			// 	joint_task->reInitializeTask();
+			// 	posori_task->reInitializeTask();
+			// 	state = NOZZLE_DOWN;
+			// } else {
+			// 	pauseCounter++;
+			// }
+		}
+
+		else if (state == NOZZLE_DOWN) {
+			cout << "Made it to Nozzle Down task\n";
 		}
 
 		// else if (state == NOZZLE_UP) {
-		//
-		// }
-		//
-		// else if (state == NOZZLE_DOWN) {
 		//
 		// }
 		//
@@ -256,8 +265,10 @@ int main() {
 
 		//}
 
-		if (state == MOVING) {
+		if (state == MOVING || state == POURING_RIGHT) {
 			/* Primary Joint Task Control */
+			/* Invoked when we want the base to move and the nozzle to maintain position. */
+			/* RUTA: consider making POURING task posori instead of joint for better accuracy. */
 			joint_task->_desired_position = q_des;
 
 			// update task model and set hierarchy
@@ -268,7 +279,8 @@ int main() {
 			joint_task->computeTorques(joint_task_torques);
 
 			command_torques = joint_task_torques;
-		} else {
+		} else if (state == POSITION_HOLD) {
+			// Maintain all joint angles at the current position
 			joint_task->_desired_position = robot->_q;
 
 			// update task model and set hierarchy
@@ -279,6 +291,9 @@ int main() {
 			joint_task->computeTorques(joint_task_torques);
 
 			command_torques = joint_task_torques;
+		} else if (state == NOZZLE_DOWN || state == NOZZLE_UP) {
+			/* Primary POSORI Control */
+			cout << "posori control\n";
 		}
 
 		// send to redis
