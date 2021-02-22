@@ -63,7 +63,7 @@
         <mesh filename="../../../model/jointcart2/joint cart2.obj" />
       </geometry>
     </visual>
-  </link>
+  </link> -->
 
 <!-- PRISMATIC LINK -->
   <link name="linkTool">
@@ -137,6 +137,6 @@
     <calibration rising="0.0" />
     <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
   </joint>
-  
+
 
 </robot>

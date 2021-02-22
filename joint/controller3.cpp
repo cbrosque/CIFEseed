@@ -75,15 +75,17 @@ int main() {
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
 
 	// Set up positions for each task
-	// MatrixXd positions(14, 5);
-	// positions << 1.5, 1.5, 0.0, 0.0, 0.0, // pos1a
-	// 						 1.5, 1.0, 0.0, 0.0, 0.0, // pos1b
-	// 						 1.5, 1.0, 0.0, 0.0, 0.0, // pos2a
-	// 						 1.5, 1.0, 0.0, 0.0, 0.0; // pos2b
-	VectorXd pos1a = VectorXd::Zero(dof);
-	VectorXd pos1b = VectorXd::Zero(dof);
-	pos1a << 1.5, 1.5, 0.0, 0.0, 0.0;
-	pos1b << 1.5, 1.0, 0.0, 0.0, 0.0;
+	MatrixXd positions(4, 4);
+	positions << 1.5, 1.5, 0.0, 0.0, // pos1a
+							 1.5, 1.5, 0.0, 0.0, // pos1b
+							 1.5, 1.5, 0.0, 0.0, // pos2a
+							 1.5, 1.5, 0.0, 0.0; // pos2b
+
+	cout << "positions = " << positions << "\n";
+	// VectorXd pos1a = VectorXd::Zero(dof);
+	// VectorXd pos1b = VectorXd::Zero(dof);
+	// pos1a << 1.5, 1.5, 0.0, 0.0;
+	// pos1b << 1.5, 1.0, 0.0, 0.0;
 
 	/*** SET UP POSORI TASK***/
 	const string control_link = "linkTool";
@@ -139,6 +141,7 @@ int main() {
 
 	double lastStopped = controller_counter; // Update this when you stop
 	double pauseCounter = 0;
+	double pc = 0;
 
 	while (runloop) {
 		// wait for next scheduled loop
@@ -166,8 +169,8 @@ int main() {
 
 		if (state == INITIAL_POS) {
 			joint_task->reInitializeTask();
-			q_des << pos1a;
-			// q_des << positions(0);
+			// q_des << pos1a;
+			q_des << positions(pc);
 			cout << "qdes = " << q_des << "\n";
 			state = MOVING;
 		}
@@ -177,6 +180,7 @@ int main() {
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
 				// cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
+				pc++;
 				// posori_task->reInitializeTask();
 				// q_des << pos1b; // set desired joint angles
 
@@ -186,6 +190,13 @@ int main() {
 
 		else if (state == POSITION_HOLD) {
 			cout << "Made it to position hold\n";
+			if (pc == 1) {
+				joint_task->reInitializeTask();
+				// q_des << pos1b;
+				q_des << positions(1);
+				cout << "qdes = " << q_des << "\n";
+				state = MOVING;
+			}
 			// if (pauseCounter == 100) {
 			// 	pauseCounter = 0;
 			// 	joint_task->reInitializeTask();
