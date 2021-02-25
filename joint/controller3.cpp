@@ -76,12 +76,13 @@ int main() {
 
 	// Set up positions for each task
 	MatrixXd positions(4, 4);
-	positions << 1.5, 1.5, 0.0, 0.0, // pos1a
-							 1.5, 1.5, 0.0, 0.0, // pos1b
-							 1.5, 1.5, 0.0, 0.0, // pos2a
-							 1.5, 1.5, 0.0, 0.0; // pos2b
+	positions << 2.5, 0.0, 0.0, 0.0, // pos1a
+							 2.5, 0.0, 0.0, 0.0, // pos1b
+							 2.5, 0.0, 0.0, 0.0, // pos2a
+							 2.5, 0.0, 0.0, 0.0; // pos2b
 
 	cout << "positions = " << positions << "\n";
+	cout << "positions.row(0) = " << positions.row(0) << "\n";
 	// VectorXd pos1a = VectorXd::Zero(dof);
 	// VectorXd pos1b = VectorXd::Zero(dof);
 	// pos1a << 1.5, 1.5, 0.0, 0.0;
@@ -170,7 +171,8 @@ int main() {
 		if (state == INITIAL_POS) {
 			joint_task->reInitializeTask();
 			// q_des << pos1a;
-			q_des << positions(pc);
+			VectorXd newPos = positions.row(pc);
+			q_des << newPos;
 			cout << "qdes = " << q_des << "\n";
 			state = MOVING;
 		}
@@ -193,7 +195,9 @@ int main() {
 			if (pc == 1) {
 				joint_task->reInitializeTask();
 				// q_des << pos1b;
-				q_des << positions(1);
+				// q_des << positions.row(1);
+				VectorXd newPos = positions.row(pc);
+				q_des << newPos;
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
 			}
