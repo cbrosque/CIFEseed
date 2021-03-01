@@ -75,11 +75,22 @@ int main() {
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
 
 	// Set up positions for each task
-	MatrixXd positions(4, 4);
-	positions << 2.5, 0.0, 0.0, 0.0, // pos1a
-							 2.5, 0.0, 0.0, 0.0, // pos1b
-							 2.5, 0.0, 0.0, 0.0, // pos2a
-							 2.5, 0.0, 0.0, 0.0; // pos2b
+	MatrixXd positions(14, 4);
+	positions << 1.8, 2.4, 0.0, 0.0, // pos1a
+							 -0.6, 2.4, 0.0, 0.0, // pos1b
+							 -0.6, 3.7, 0.0, 0.0, // pos2a
+							 -0.6, 2.4, 0.0, 0.0, // pos2b
+							 -5.5, 2.4, 0.0, 0.0, // pos3a
+							 -0.6, 2.4, 0.0, 0.0, // pos3b
+							 -0.6, 2.4, 0.0, 0.0, // pos4a
+							 -0.6, -2.6, 0.0, 0.0, // pos4b
+							 1.8, -2.6, 0.0, 0.0, // pos5a
+							 -0.6,-2.6, 0.0, 0.0, // pos5b
+							 -0.6, -3.7, 0.0, 0.0, // pos6a
+							 -0.6, -2.6, 0.0, 0.0, // pos6b
+							 -5.5, -2.6, 0.0, 0.0, // pos7a
+							 -0.6, -2.6, 0.0, 0.0; // pos7b
+
 
 	cout << "positions = " << positions << "\n";
 	cout << "positions.row(0) = " << positions.row(0) << "\n";
@@ -191,8 +202,8 @@ int main() {
 		}
 
 		else if (state == POSITION_HOLD) {
-			cout << "Made it to position hold\n";
-			if (pc == 1) {
+			// cout << "Made it to position hold\n";
+			if (pc < 14) {
 				joint_task->reInitializeTask();
 				// q_des << pos1b;
 				// q_des << positions.row(1);
