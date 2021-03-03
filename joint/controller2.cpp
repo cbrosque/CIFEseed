@@ -7,6 +7,10 @@
 #include "timer/LoopTimer.h"
 #include "Sai2Primitives.h"
 
+// added force sensor
+#include "force_sensor/ForceSensorSim.h"
+#include "force_sensor/ForceSensorDisplay.h"
+
 #include <iostream>
 #include <string>
 
@@ -71,6 +75,9 @@ int main() {
 	JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda::actuators::fgc";
 	CONTINUE_KEY = "continue";
 
+	// added force sensor
+	const std::string EE_FORCE_KEY = "sai2::cs225a::sensor::force";
+	const std::string EE_MOMENT_KEY = "sai2::cs225a::sensor::moment";
 
 	// start redis client
 	auto redis_client = RedisClient();
@@ -88,6 +95,12 @@ int main() {
 	robot->_q = redis_client.getEigenMatrixJSON(JOINT_ANGLES_KEY);
 	VectorXd initial_q = robot->_q;
 	robot->updateModel();
+
+	// load force sensor
+	Eigen::Vector3d sensed_force;
+	Eigen::Vector3d sensed_moment;
+	sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
+	sensed_moment = redis_client.getEigenMatrixJSON(EE_MOMENT_KEY);
 
 	// prepare controller
 	int dof = robot->dof();
@@ -201,6 +214,14 @@ int main() {
 			cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
 			cout << endl;
 			// cout << "counter: " << controller_counter << "\n";
+		}
+
+		// Use sensed force for controller switching
+		sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
+		cout << abs(sensed_force(1)) << "\n";
+		if (abs(sensed_force(1)) > 30.0) {
+			state = POSITION_HOLD;
+			posori_task->reInitializeTask();
 		}
 
 		// state switching
