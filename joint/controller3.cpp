@@ -195,11 +195,11 @@ int main() {
 
 		// Use sensed force to switch controllers
 		sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
-		cout << abs(sensed_force(1)) << "\n";
-		if (abs(sensed_force(1)) > 30.0) {
-			state = TRAJECTORY_CONTROLLER;
-			posori_task->reInitializeTask();
-		}
+		// cout << abs(sensed_force(1)) << "\n";
+		// if (abs(sensed_force(1)) > 30.0) {
+		// 	state = TRAJECTORY_CONTROLLER;
+		// 	posori_task->reInitializeTask();
+		// }
 
 		if (state == INITIAL_POS) {
 			joint_task->reInitializeTask();
@@ -215,11 +215,40 @@ int main() {
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
 				// cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
-				pc++;
+				// pc++;
 				// posori_task->reInitializeTask();
 				// q_des << pos1b; // set desired joint angles
 
-				state = POSITION_HOLD; // advance to next state
+				// state = POSITION_HOLD; // advance to next state
+
+				// Set the state to NOZZLE_DOWN or NOZZLE_UP
+				q_des << robot->_q;
+				if (robot->_q(3) > 0) {
+					// Set to nozzle up
+					q_des(3) = 0;
+					state = NOZZLE_UP;
+				} else {
+					q_des(3) = 1.0;
+					state = NOZZLE_DOWN;
+				}
+			}
+		}
+
+		else if (state == NOZZLE_DOWN) {
+			// When the nozzle is all the way down, go to POSITION_HOLD
+			if((robot->_q - q_des).norm() < tolerance){
+				joint_task->reInitializeTask();
+				pc++;
+				state = POSITION_HOLD;
+			}
+		}
+
+		else if (state == NOZZLE_UP) {
+			// When the nozzle isall the way up, go to POSITION_HOLD
+			if((robot->_q - q_des).norm() < tolerance){
+				joint_task->reInitializeTask();
+				pc++;
+				state = POSITION_HOLD;
 			}
 		}
 
@@ -234,27 +263,7 @@ int main() {
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
 			}
-			// if (pauseCounter == 100) {
-			// 	pauseCounter = 0;
-			// 	joint_task->reInitializeTask();
-			// 	posori_task->reInitializeTask();
-			// 	state = NOZZLE_DOWN;
-			// } else {
-			// 	pauseCounter++;
-			// }
 		}
-
-		else if (state == NOZZLE_DOWN) {
-			cout << "Made it to Nozzle Down task\n";
-		}
-
-		// else if (state == NOZZLE_UP) {
-		//
-		// }
-		//
-		// else if (state == POURING_RIGHT) {
-		//
-		// }
 
 		// state switching
 		// if(controller_counter % 1000 == 0)
@@ -320,7 +329,7 @@ int main() {
 
 		//}
 
-		if (state == MOVING || state == POURING_RIGHT) {
+		if (state == MOVING || state == NOZZLE_DOWN || state == NOZZLE_UP) {
 			/* Primary Joint Task Control */
 			/* Invoked when we want the base to move and the nozzle to maintain position. */
 			/* RUTA: consider making POURING task posori instead of joint for better accuracy. */
@@ -346,10 +355,11 @@ int main() {
 			joint_task->computeTorques(joint_task_torques);
 
 			command_torques = joint_task_torques;
-		} else if (state == NOZZLE_DOWN || state == NOZZLE_UP) {
-			/* Primary POSORI Control */
-			cout << "posori control\n";
 		}
+		// else if (state == NOZZLE_DOWN || state == NOZZLE_UP) {
+		// 	/* Primary POSORI Control */
+		// 	cout << "posori control\n";
+		// }
 
 		// send to redis
 		redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);

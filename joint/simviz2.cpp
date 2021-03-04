@@ -10,6 +10,9 @@
 
 #include "uiforce/UIForceWidget.h"
 
+#include "force_sensor/ForceSensorSim.h"  // references src folder in sai2-common directory
+#include "force_sensor/ForceSensorDisplay.h"
+
 #include <iostream>
 #include <string>
 
@@ -30,13 +33,18 @@ const string camera_name = "camera_fixed";
 // - write:
 const std::string JOINT_ANGLES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::q";
 const std::string JOINT_VELOCITIES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::dq";
+const std::string EE_FORCE_KEY = "cs225a::sensor::force";
+const std::string EE_MOMENT_KEY = "cs225a::sensor::moment";
 // - read
 const std::string JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda::actuators::fgc";
 
 RedisClient redis_client;
 
+// force sensors
+ForceSensorSim* force_sensor;
+
 // simulation function prototype
-void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UIForceWidget *ui_force_widget);
+void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UIForceWidget *ui_force_widget, ForceSensorSim* force_sensor);
 
 // callback to print glfw errors
 void glfwError(int error, const char* description);
@@ -59,6 +67,10 @@ bool fTransZp = false;
 bool fTransZn = false;
 bool fRotPanTilt = false;
 bool fRobotLinkSelect = false;
+
+const Eigen::Vector3d sensor_pos_in_link = Eigen::Vector3d(0.0,0.0,0.1);
+Eigen::Vector3d sensed_force;
+Eigen::Vector3d sensed_moment;
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -92,6 +104,11 @@ int main() {
 	sim->getJointPositions("mmp_panda", robot->_q);
 	sim->getJointVelocities("mmp_panda", robot->_dq);
 	robot->updateKinematics();
+
+	// initialize force sensor: needs Sai2Simulation sim interface type
+	Eigen::Affine3d transform_sensor = Eigen::Affine3d::Identity();
+	transform_sensor.translation() = sensor_pos_in_link;
+	force_sensor = new ForceSensorSim(robot_name, "linkTool", transform_sensor, robot);
 
 	/*------- Set up visualization -------*/
 	// set up error callback
@@ -135,7 +152,7 @@ int main() {
 	glewInitialize();
 
 	fSimulationRunning = true;
-	thread sim_thread(simulation, robot, sim, ui_force_widget);
+	thread sim_thread(simulation, robot, sim, ui_force_widget, force_sensor);
 
 	// while window is open:
 	while (!glfwWindowShouldClose(window) && fSimulationRunning)
@@ -257,11 +274,14 @@ int main() {
 }
 
 //------------------------------------------------------------------------------
-void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UIForceWidget *ui_force_widget) {
+void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UIForceWidget *ui_force_widget, ForceSensorSim* force_sensor) {
 
 	int dof = robot->dof();
 	VectorXd command_torques = VectorXd::Zero(dof);
 	redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
+
+	// setup redis client data container for pipeset (batch write)
+	std::vector<std::pair<std::string, std::string>> redis_data(2);  // set with the number of keys to write
 
 	// create a timer
 	LoopTimer timer;
@@ -309,9 +329,17 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		sim->getJointVelocities("mmp_panda", robot->_dq);
 		robot->updateModel();
 
+		// update force sensor readings
+		force_sensor->update(sim);
+		force_sensor->getForceLocalFrame(sensed_force);  // refer to ForceSensorSim.h in sai2-common/src/force_sensor (can also get wrt global frame)
+    force_sensor->getMomentLocalFrame(sensed_moment);
+
 		// write new robot state to redis
 		redis_client.setEigenMatrixJSON(JOINT_ANGLES_KEY, robot->_q);
 		redis_client.setEigenMatrixJSON(JOINT_VELOCITIES_KEY, robot->_dq);
+		redis_data.at(0) = std::pair<string, string>(EE_FORCE_KEY, redis_client.encodeEigenMatrixJSON(sensed_force));
+		redis_data.at(1) = std::pair<string, string>(EE_MOMENT_KEY, redis_client.encodeEigenMatrixJSON(sensed_moment));
+		redis_client.pipeset(redis_data);
 
 		//update last time
 		last_time = curr_time;
