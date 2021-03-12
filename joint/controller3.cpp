@@ -207,6 +207,7 @@ int main() {
 			VectorXd newPos = positions.row(pc);
 			q_des << newPos;
 			cout << "qdes = " << q_des << "\n";
+			cout << abs(sensed_force) << "\n";
 			state = MOVING;
 		}
 
@@ -264,70 +265,6 @@ int main() {
 				state = MOVING;
 			}
 		}
-
-		// state switching
-		// if(controller_counter % 1000 == 0)
-		// {
-		// 	state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV;
-		// 	// Set desired task position
-		// 	q_des << initial_q;
-		// 	q_des(0) = 1.5;
-		// 	q_des(1) = -1.5;
-		// 	q_des(2) = 0;
-		// 	q_des(3) = 0;
-		// 	q_des(4) = 0;
-		//
-		// 	// Set desired orientation
-		// 	//ori_des.setIdentity();
-		//
-		// 	if ((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
-		// 		joint_task->reInitializeTask();
-		// 		//posori_task->reInitializeTask();
-		// 		q_des << robot->_q; // set desired joint angles
-		//
-		// 		state = MOVE_TO_GROOVE; //A_SIDE_BASE_NAV2; // advance to next state
-		// 		cout << "Reached goal position\n";
-		// 	}
-		// }
-
-		// if (state == MOVE_TO_GROOVE) {//if(state == A_SIDE_BASE_NAV || state == A_SIDE_BASE_NAV2 || state == A_SIDE_BASE_NAV3 || state == A_SIDE_BASE_NAV4){
-		// 	/*** PRIMARY JOINT CONTROL***/
-		//
-		// 	joint_task->_desired_position = q_des;
-		//
-		// 	// update task model and set hierarchy
-		// 	N_prec.setIdentity();
-		// 	joint_task->updateTaskModel(N_prec);
-		//
-		// 	// compute torques
-		// 	joint_task->computeTorques(joint_task_torques);
-		//
-		// 	command_torques = joint_task_torques;
-		//
-		// }
-		//else{
-			/*** PRIMARY POSORI CONTROL W/ JOINT CONTROL IN NULLSPACE***/
-			// update controlller posiitons
-			//posori_task->_desired_position = x_des;
-			//posori_task->_desired_orientation = ori_des;
-			//joint_task->_desired_position = q_des;
-
-			// update task model and set hierarchy
-			//N_prec.setIdentity();
-			//posori_task->updateTaskModel(N_prec);
-			//N_prec = posori_task->_N;
-			//joint_task->updateTaskModel(N_prec);
-
-			// compute torques
-			//posori_task->computeTorques(posori_task_torques);
-			//joint_task->computeTorques(joint_task_torques);
-
-			//command_torques = posori_task_torques + joint_task_torques;
-			//command_torques(0) = joint_task_torques(0);
-			//command_torques(1) = joint_task_torques(1);
-			//command_torques(2) = joint_task_torques(2);
-
-		//}
 
 		if (state == MOVING || state == NOZZLE_DOWN || state == NOZZLE_UP) {
 			/* Primary Joint Task Control */
