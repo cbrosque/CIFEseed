@@ -68,7 +68,7 @@ bool fTransZn = false;
 bool fRotPanTilt = false;
 bool fRobotLinkSelect = false;
 
-const Eigen::Vector3d sensor_pos_in_link = Eigen::Vector3d(0.0,0.0,0.0);
+const Eigen::Vector3d sensor_pos_in_link = Eigen::Vector3d(0.0,0.0,-0.1);
 Eigen::Vector3d sensed_force;
 Eigen::Vector3d sensed_moment;
 
@@ -107,6 +107,7 @@ int main() {
 
 	// initialize force sensor: needs Sai2Simulation sim interface type
 	Eigen::Affine3d transform_sensor = Eigen::Affine3d::Identity();
+	transform_sensor(2,2) = -1.0;
 	transform_sensor.translation() = sensor_pos_in_link;
 	force_sensor = new ForceSensorSim(robot_name, "linkTool", transform_sensor, robot);
 	graphics->showLinkFrame(true, robot_name, "linkTool", 0.15);
