@@ -196,10 +196,9 @@ int main() {
 		// Use sensed force to switch controllers
 		sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
 		// cout << abs(sensed_force(1)) << "\n";
-		// if (abs(sensed_force(1)) > 30.0) {
-		// 	state = TRAJECTORY_CONTROLLER;
-		// 	posori_task->reInitializeTask();
-		// }
+		if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
+			cout << "sensed force = " << sensed_force << "\n";
+		}
 
 		if (state == INITIAL_POS) {
 			joint_task->reInitializeTask();
@@ -207,7 +206,7 @@ int main() {
 			VectorXd newPos = positions.row(pc);
 			q_des << newPos;
 			cout << "qdes = " << q_des << "\n";
-			cout << abs(sensed_force) << "\n";
+			// cout << "sensed force = " << sensed_force << "\n";
 			state = MOVING;
 		}
 
@@ -216,20 +215,13 @@ int main() {
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
 				// cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
-				// pc++;
-				// posori_task->reInitializeTask();
-				// q_des << pos1b; // set desired joint angles
-
-				// state = POSITION_HOLD; // advance to next state
-
-				// Set the state to NOZZLE_DOWN or NOZZLE_UP
 				q_des << robot->_q;
 				if (robot->_q(3) > 0) {
 					// Set to nozzle up
-					q_des(3) = 0;
+					q_des(3) = 0.0;
 					state = NOZZLE_UP;
 				} else {
-					q_des(3) = 1.0;
+					q_des(3) = -0.15;
 					state = NOZZLE_DOWN;
 				}
 			}
@@ -260,6 +252,7 @@ int main() {
 				// q_des << pos1b;
 				// q_des << positions.row(1);
 				VectorXd newPos = positions.row(pc);
+				newPos(3) = robot->_q(3);
 				q_des << newPos;
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
