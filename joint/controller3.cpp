@@ -91,19 +91,19 @@ int main() {
 	// Set up positions for each task
 	MatrixXd positions(14, 4);
 	positions << 1.8, 2.4, 0.0, 0.0, // pos1a
-							 -0.6, 2.4, 0.0, 0.0, // pos1b
+							 -0.6, 2.4, 0.0, -0.15, // pos1b
 							 -0.6, 3.7, 0.0, 0.0, // pos2a
-							 -0.6, 2.4, 0.0, 0.0, // pos2b
+							 -0.6, 2.4, 0.0, -0.15, // pos2b
 							 -5.5, 2.4, 0.0, 0.0, // pos3a
-							 -0.6, 2.4, 0.0, 0.0, // pos3b
+							 -0.6, 2.4, 0.0, -0.15, // pos3b
 							 -0.6, 2.4, 0.0, 0.0, // pos4a
-							 -0.6, -2.6, 0.0, 0.0, // pos4b
+							 -0.6, -2.6, 0.0, -0.15, // pos4b
 							 1.8, -2.6, 0.0, 0.0, // pos5a
-							 -0.6,-2.6, 0.0, 0.0, // pos5b
+							 -0.6,-2.6, 0.0, -0.15, // pos5b
 							 -0.6, -3.7, 0.0, 0.0, // pos6a
-							 -0.6, -2.6, 0.0, 0.0, // pos6b
+							 -0.6, -2.6, 0.0, -0.15, // pos6b
 							 -5.5, -2.6, 0.0, 0.0, // pos7a
-							 -0.6, -2.6, 0.0, 0.0; // pos7b
+							 -0.6, -2.6, 0.0, -0.15; // pos7b
 
 
 	cout << "positions = " << positions << "\n";
@@ -237,7 +237,7 @@ int main() {
 		}
 
 		else if (state == NOZZLE_UP) {
-			// When the nozzle isall the way up, go to POSITION_HOLD
+			// When the nozzle is all the way up, go to POSITION_HOLD
 			if((robot->_q - q_des).norm() < tolerance){
 				joint_task->reInitializeTask();
 				pc++;
@@ -252,7 +252,7 @@ int main() {
 				// q_des << pos1b;
 				// q_des << positions.row(1);
 				VectorXd newPos = positions.row(pc);
-				newPos(3) = robot->_q(3);
+				// newPos(3) = robot->_q(3);
 				q_des << newPos;
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
