@@ -90,20 +90,20 @@ int main() {
 
 	// Set up positions for each task
 	MatrixXd positions(14, 4);
-	positions << 1.8, 2.4, 0.0, 0.0, // pos1a
-							 -0.6, 2.4, 0.0, -0.15, // pos1b
-							 -0.6, 3.7, 0.0, 0.0, // pos2a
-							 -0.6, 2.4, 0.0, -0.15, // pos2b
-							 -5.5, 2.4, 0.0, 0.0, // pos3a
-							 -0.6, 2.4, 0.0, -0.15, // pos3b
-							 -0.6, 2.4, 0.0, 0.0, // pos4a
-							 -0.6, -2.6, 0.0, -0.15, // pos4b
+	positions << 1.8, 2.4, 0.0, 0.0, // pos1a - down
+							 -0.6, 2.4, 0.0, 0.0, // pos1b - up
+							 -0.6, 3.7, 0.0, 0.0, // pos2a - down
+							 -0.6, 2.4, 0.0, 0.0, // pos2b - up
+							 -5.5, 2.4, 0.0, 0.0, // pos3a - down
+							 -0.6, 2.4, 0.0, 0.0, // pos3b - up
+							 -0.6, 2.4, 0.0, 0.0, // pos4a - down
+							 -0.6, -2.6, 0.0, 0.0, // pos4b - up
 							 1.8, -2.6, 0.0, 0.0, // pos5a
-							 -0.6,-2.6, 0.0, -0.15, // pos5b
+							 -0.6,-2.6, 0.0, 0.0, // pos5b
 							 -0.6, -3.7, 0.0, 0.0, // pos6a
-							 -0.6, -2.6, 0.0, -0.15, // pos6b
+							 -0.6, -2.6, 0.0, 0.0, // pos6b
 							 -5.5, -2.6, 0.0, 0.0, // pos7a
-							 -0.6, -2.6, 0.0, -0.15; // pos7b
+							 -0.6, -2.6, 0.0, 0.0; // pos7b
 
 
 	cout << "positions = " << positions << "\n";
@@ -168,6 +168,7 @@ int main() {
 	double lastStopped = controller_counter; // Update this when you stop
 	double pauseCounter = 0;
 	double pc = 0;
+	int nozzle_pos = 0; // 0 is up, 1 is down
 
 	while (runloop) {
 		// wait for next scheduled loop
@@ -215,21 +216,25 @@ int main() {
 			if((robot->_q - q_des).norm() < tolerance){ // check if goal position reached
 				// cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
-				q_des << robot->_q;
-				if (robot->_q(3) > 0) {
+
+				// After reaching goal, switch nozzle position
+				if (nozzle_pos == 1) {
 					// Set to nozzle up
 					q_des(3) = 0.0;
 					state = NOZZLE_UP;
+					nozzle_pos = 0;
 				} else {
+					// set to nozzle down
 					q_des(3) = -0.15;
 					state = NOZZLE_DOWN;
+					nozzle_pos = 1;
 				}
 			}
 		}
 
 		else if (state == NOZZLE_DOWN) {
 			// When the nozzle is all the way down, go to POSITION_HOLD
-			if((robot->_q - q_des).norm() < tolerance){
+			if((robot->_q - q_des).norm() < tolerance && nozzle_pos == 1){
 				joint_task->reInitializeTask();
 				pc++;
 				state = POSITION_HOLD;
@@ -238,7 +243,7 @@ int main() {
 
 		else if (state == NOZZLE_UP) {
 			// When the nozzle is all the way up, go to POSITION_HOLD
-			if((robot->_q - q_des).norm() < tolerance){
+			if((robot->_q - q_des).norm() < tolerance && nozzle_pos == 0){
 				joint_task->reInitializeTask();
 				pc++;
 				state = POSITION_HOLD;
@@ -249,11 +254,14 @@ int main() {
 			// cout << "Made it to position hold\n";
 			if (pc < 14) {
 				joint_task->reInitializeTask();
-				// q_des << pos1b;
-				// q_des << positions.row(1);
 				VectorXd newPos = positions.row(pc);
-				// newPos(3) = robot->_q(3);
 				q_des << newPos;
+				// Maintain nozzle position when moving again
+				if (nozzle_pos == 1) {
+					q_des(3) = -0.15;
+				} else {
+					q_des(3) = 0.0;
+				}
 				cout << "qdes = " << q_des << "\n";
 				state = MOVING;
 			}
