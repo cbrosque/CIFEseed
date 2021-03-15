@@ -39,8 +39,8 @@
         <collision>
             <origin xyz="0.0 0.0 0" rpy="0 0 0" />
             <geometry>
-        	      <!-- <box size="3.0 1.5 0.5" /> -->
-                <mesh filename="./resources/../../../model/Joints2/Joints2.obj" scale="1.0 1.0 1.0"/>
+        	      <box size="3.0 1.5 0.5" />
+                <!-- <mesh filename="./resources/../../../model/Joints2/Joints2.obj" scale="1.0 1.0 1.0"/> -->
                 <!-- <mesh filename="./resources/../../../model/Nobolt/Nobolt.obj" scale="1.0 1.0 1.0"/> -->
             </geometry>
         </collision>

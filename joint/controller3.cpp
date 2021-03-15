@@ -196,7 +196,7 @@ int main() {
 
 		// Use sensed force to switch controllers
 		sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
-		// cout << abs(sensed_force(1)) << "\n";
+		// cout << abs(sensed_force(2)) << "\n";
 		if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
 			cout << "sensed force = " << sensed_force << "\n";
 		}
