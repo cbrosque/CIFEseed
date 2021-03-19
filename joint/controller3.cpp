@@ -90,13 +90,13 @@ int main() {
 
 	// Set up positions for each task
 	MatrixXd positions(14, 4);
-	positions << 1.8, 2.4, 0.0, 0.0, // pos1a - down
-							 -0.6, 2.4, 0.0, 0.0, // pos1b - up
+	positions << 1.8, 2.42, 0.0, 0.0, // pos1a - down
+							 -0.6, 2.42, 0.0, 0.0, // pos1b - up
 							 -0.6, 3.7, 0.0, 0.0, // pos2a - down
-							 -0.6, 2.4, 0.0, 0.0, // pos2b - up
-							 -5.5, 2.4, 0.0, 0.0, // pos3a - down
-							 -0.6, 2.4, 0.0, 0.0, // pos3b - up
-							 -0.6, 2.4, 0.0, 0.0, // pos4a - down
+							 -0.6, 2.42, 0.0, 0.0, // pos2b - up
+							 -5.5, 2.42, 0.0, 0.0, // pos3a - down
+							 -0.6, 2.42, 0.0, 0.0, // pos3b - up
+							 -0.6, 2.42, 0.0, 0.0, // pos4a - down
 							 -0.6, -2.6, 0.0, 0.0, // pos4b - up
 							 1.8, -2.6, 0.0, 0.0, // pos5a
 							 -0.6,-2.6, 0.0, 0.0, // pos5b
