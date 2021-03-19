@@ -39,3 +39,6 @@ build/
 bin/
 
 # folders with data from all runs
+
+# Ruta
+dump.rdb

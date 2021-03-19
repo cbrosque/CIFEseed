@@ -146,7 +146,7 @@ int main() {
 	#else
 		joint_task->_use_velocity_saturation_flag = true;
 	#endif
-    joint_task->_saturation_velocity << M_PI/6, M_PI/6, M_PI/6; // set new slower velocity (to help visualize)
+    joint_task->_saturation_velocity << M_PI/12, M_PI/12, M_PI/12; //M_PI/6, M_PI/6, M_PI/6; // set new slower velocity (to help visualize)
 
 
 	// controller gains
@@ -225,7 +225,7 @@ int main() {
 					nozzle_pos = 0;
 				} else {
 					// set to nozzle down
-					q_des(3) = -0.15;
+					q_des(3) = -0.05;
 					state = NOZZLE_DOWN;
 					nozzle_pos = 1;
 				}
@@ -258,7 +258,7 @@ int main() {
 				q_des << newPos;
 				// Maintain nozzle position when moving again
 				if (nozzle_pos == 1) {
-					q_des(3) = -0.15;
+					q_des(3) = -0.05;
 				} else {
 					q_des(3) = 0.0;
 				}
