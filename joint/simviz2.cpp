@@ -68,7 +68,7 @@ bool fTransZn = false;
 bool fRotPanTilt = false;
 bool fRobotLinkSelect = false;
 
-const Eigen::Vector3d sensor_pos_in_link = Eigen::Vector3d(0.0,0.0,0.0);
+const Eigen::Vector3d sensor_pos_in_link = Eigen::Vector3d(0.0,0.0,0.1);
 Eigen::Vector3d sensed_force;
 Eigen::Vector3d sensed_moment;
 
