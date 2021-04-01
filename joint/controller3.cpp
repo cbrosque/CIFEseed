@@ -225,7 +225,7 @@ int main() {
 					nozzle_pos = 0;
 				} else {
 					// set to nozzle down
-					q_des(3) = -0.05;
+					q_des(3) = -0.02;
 					state = NOZZLE_DOWN;
 					nozzle_pos = 1;
 				}
@@ -258,7 +258,7 @@ int main() {
 				q_des << newPos;
 				// Maintain nozzle position when moving again
 				if (nozzle_pos == 1) {
-					q_des(3) = -0.05;
+					q_des(3) = -0.02;
 				} else {
 					q_des(3) = 0.0;
 				}
