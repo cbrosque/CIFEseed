@@ -9,6 +9,8 @@
 #include <GLFW/glfw3.h> //must be loaded after loading opengl/glew
 
 #include "uiforce/UIForceWidget.h"
+#include "force_sensor/ForceSensorSim.h" // references src folder in sai2-common directory
+#include "force_sensor/ForceSensorDisplay.h"
 
 #include <iostream>
 #include <string>
@@ -25,13 +27,27 @@ const string robot_file = "./resources/mmp_panda3.urdf";
 const string obj_file = "mmp_panda_tool_no_collision.urdf";
 const string robot_name = "mmp_panda";
 const string camera_name = "camera_fixed";
-
+const string control_link = "linkTool";
 // redis keys:
 // - write:
 const std::string JOINT_ANGLES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::q";
 const std::string JOINT_VELOCITIES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::dq";
 // - read
 const std::string JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda::actuators::fgc";
+
+const std::string HAPTIC_POS_KEY = "Haptic_POS";
+const std::string HAPTIC_ORIENTATION_KEY = "Haptic_ORIENTATION";
+const std::string HAPTIC_VELOCITY_KEY = "hAPTIC_VELOCITY";
+const std::string HAPTIC_FORCE_KEY = "Haptic_FORCE";
+const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
+const std::string HAPTIC_SWITCH_KEY = "Haptic_SWITCH";
+const std::string HAPTIC_INFO_KEY = "Haptic_INFO";
+const std::string EE_FORCE_SENSOR_FORCE_KEY = "sai2::optoforceSensor::6Dsensor::force";
+
+// force sensor
+ForceSensorSim *force_sensor;
+// display widget for forces at end effector
+ForceSensorDisplay *force_display;
 
 RedisClient redis_client;
 
@@ -57,8 +73,24 @@ bool fTransYp = false;
 bool fTransYn = false;
 bool fTransZp = false;
 bool fTransZn = false;
+bool CameraZoom1 = false;
 bool fRotPanTilt = false;
 bool fRobotLinkSelect = false;
+
+chai3d::cGenericHapticDevicePtr hapticDevice;
+chai3d::cToolGripper *tool;
+chai3d::cHapticDeviceHandler *handler;
+chai3d::cVector3d hapticPos;
+chai3d::cMatrix3d hapticOri;
+chai3d::cVector3d hapticVel;
+chai3d::cVector3d force_field;
+chai3d::cVector3d moment_field;
+
+Eigen::Vector3d hapticposition;
+Eigen::Matrix3d hapticorientation;
+Eigen::Vector3d hapticvelocity;
+Eigen::Vector3d hapticforce;
+Eigen::Vector3d hapticmoment;
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -66,12 +98,12 @@ int main() {
 	// start redis client
 	redis_client = RedisClient();
 	redis_client.connect();
-
+	cout << "hiiiiiiii"  << endl;
 	// set up signal handler
 	signal(SIGABRT, &sighandler);
 	signal(SIGTERM, &sighandler);
 	signal(SIGINT, &sighandler);
-
+	cout << "hiiiiiiii"  << endl;
 	// load graphics scene
 	auto graphics = new Sai2Graphics::Sai2Graphics(world_file, true);
 	Eigen::Vector3d camera_pos, camera_lookat, camera_vertical;
@@ -81,6 +113,42 @@ int main() {
 	auto robot = new Sai2Model::Sai2Model(robot_file, false);
 	//robot->_q(0) = -0.8;
 	robot->updateModel();
+	
+	//Haptic Devices
+	handler = new chai3d::cHapticDeviceHandler();
+	handler->getDevice(hapticDevice, 0);
+	cout << "hapticdevice" << hapticDevice << endl;
+	hapticDevice->open();
+	hapticDevice->calibrate();
+
+
+	tool = new chai3d::cToolGripper(graphics->_world);
+	graphics->_world->addChild(tool);
+	tool->setHapticDevice(hapticDevice);
+	tool->setWorkspaceRadius(1.0);
+	double toolRadius = 0.05;
+	tool->setRadius(toolRadius);
+	tool->setShowContactPoints(false, false);
+	tool->enableDynamicObjects(true);
+	tool->setWaitForSmallForce(true);
+	tool->start();
+	tool->setShowFrame(false);
+	tool->setFrameSize(0.1);
+	
+	// hapticDevice->enableForces(true);
+	chai3d::cHapticDeviceInfo hapticDeviceInfo = hapticDevice->getSpecifications();
+	double maxLinearStiffness = hapticDeviceInfo.m_maxLinearStiffness;
+	double maxLinearDamping = hapticDeviceInfo.m_maxLinearDamping;
+	Eigen::Vector2d stiffness_AND_damping;
+	stiffness_AND_damping(0) = maxLinearStiffness;
+	stiffness_AND_damping(1) = maxLinearDamping;
+	redis_client.setEigenMatrixDerived(HAPTIC_INFO_KEY, stiffness_AND_damping);
+	hapticDevice->setEnableGripperUserSwitch(true);
+
+	force_sensor = new ForceSensorSim(robot_name, control_link, Eigen::Affine3d::Identity(), robot);
+	force_display = new ForceSensorDisplay(force_sensor, graphics);
+	force_sensor->removeSpike(3);
+	force_sensor->enableFilter(0.1);
 
 	// load simulation world
 	auto sim = new Simulation::Sai2Simulation(world_file, false);
@@ -145,7 +213,8 @@ int main() {
 		glfwGetFramebufferSize(window, &width, &height);
 		graphics->updateGraphics("mmp_panda", robot);
 		graphics->render(camera_name, width, height);
-
+		force_display->update();
+		
 		// swap buffers
 		glfwSwapBuffers(window);
 
@@ -173,6 +242,8 @@ int main() {
 		cam_roll_axis.normalize();
 		Eigen::Vector3d cam_lookat_axis = camera_lookat;
 		cam_lookat_axis.normalize();
+		cout << "camera_pos" <<  camera_pos(0) << "," << camera_pos(1)  << "," << camera_pos(2)  << "\n"; 
+		cout << "camera_lookat" << camera_lookat(0) << "," << camera_lookat(1) << "," << camera_lookat(2) << "\n"; 
 		if (fTransXp) {
 			camera_pos = camera_pos + 0.05*cam_roll_axis;
 			camera_lookat = camera_lookat + 0.05*cam_roll_axis;
@@ -211,6 +282,11 @@ int main() {
 			camera_pos = camera_lookat + m_tilt*(camera_pos - camera_lookat);
 			Eigen::Matrix3d m_pan; m_pan = Eigen::AngleAxisd(compass, -cam_up_axis);
 			camera_pos = camera_lookat + m_pan*(camera_pos - camera_lookat);
+		}
+		if(CameraZoom1)
+		{
+			camera_pos = Vector3d(1.46758,0.644204,0.812377);
+			camera_lookat = Vector3d(0.540214,1.00539,0.714759);
 		}
 		graphics->setCameraPose(camera_name, camera_pos, cam_up_axis, camera_lookat);
 		glfwGetCursorPos(window, &last_cursorx, &last_cursory);
@@ -263,6 +339,12 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 	VectorXd command_torques = VectorXd::Zero(dof);
 	redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
 
+	hapticforce = VectorXd::Zero(3);
+	hapticmoment = VectorXd::Zero(3);
+	
+	redis_client.setEigenMatrixDerived(HAPTIC_FORCE_KEY, hapticforce);
+	redis_client.setEigenMatrixDerived(HAPTIC_MOMENT_KEY, hapticmoment);
+
 	// create a timer
 	LoopTimer timer;
 	timer.initializeTimer();
@@ -282,8 +364,42 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 	Eigen::VectorXd ui_force_command_torques;
 	ui_force_command_torques.setZero();
 
+	// sensed forces and moments from sensor
+	Eigen::Vector3d sensed_force;
+	Eigen::Vector3d sensed_moment;
+	Eigen::Vector3d forceInEEFrame = Eigen::Vector3d::Zero(3);
+	Eigen::Vector3d momentInEEFrame = Eigen::Vector3d::Zero(3);
+
 	while (fSimulationRunning) {
 		fTimerDidSleep = timer.waitForNextLoop();
+
+		// ********************* HAPTIC DEVICE ***********************
+		hapticDevice->getPosition(hapticPos);
+		hapticposition = hapticPos.eigen(); //save master and slave origin as present positions respectively
+		redis_client.setEigenMatrixDerived(HAPTIC_POS_KEY, hapticposition);
+
+		hapticDevice->getRotation(hapticOri);
+		hapticorientation = hapticOri.eigen();
+		redis_client.setEigenMatrixDerived(HAPTIC_ORIENTATION_KEY, hapticorientation);
+
+		hapticDevice->getLinearVelocity(hapticVel);
+		hapticvelocity = hapticVel.eigen();
+		redis_client.setEigenMatrixDerived(HAPTIC_VELOCITY_KEY, hapticvelocity);
+
+		redis_client.getEigenMatrixDerived(HAPTIC_FORCE_KEY, hapticforce);
+		force_field = chai3d::cVector3d(hapticforce);
+		redis_client.getEigenMatrixDerived(HAPTIC_MOMENT_KEY, hapticmoment);
+		moment_field = chai3d::cVector3d(hapticmoment);
+
+		bool button = tool->getUserSwitch(0);
+		//cout << "button" << button << endl;
+		if (button)
+		{
+			redis_client.setCommandIs(HAPTIC_SWITCH_KEY, "true");
+			tool->updateFromDevice();
+		}
+
+		hapticDevice->setForceAndTorqueAndGripperForce(force_field, moment_field, 0);
 
 		// get gravity torques
 		robot->gravityVector(g);
@@ -308,6 +424,20 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		sim->getJointPositions("mmp_panda", robot->_q);
 		sim->getJointVelocities("mmp_panda", robot->_dq);
 		robot->updateModel();
+		
+		// update force sensor readings
+		force_sensor->update(sim);
+		force_sensor->getForceLocalFrame(sensed_force); // refer to ForceSensorSim.h in sai2-common/src/force_sensor (can also get wrt global frame)
+		force_sensor->getMomentLocalFrame(sensed_moment);
+		
+		Eigen::VectorXd sensed_force_and_moment_EE_Frame(6);
+		sensed_force_and_moment_EE_Frame << sensed_force, sensed_moment;
+		cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
+		cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
+
+		redis_client.setEigenMatrixDerived(EE_FORCE_SENSOR_FORCE_KEY, sensed_force_and_moment_EE_Frame);
+		
+		// write new robot state to redis
 
 		// write new robot state to redis
 		redis_client.setEigenMatrixJSON(JOINT_ANGLES_KEY, robot->_q);
@@ -375,6 +505,9 @@ void keySelect(GLFWwindow* window, int key, int scancode, int action, int mods)
 			break;
 		case GLFW_KEY_Z:
 			fTransZn = set;
+			break;
+		case GLFW_KEY_M:
+			CameraZoom1 = set;
 			break;
 		default:
 			break;

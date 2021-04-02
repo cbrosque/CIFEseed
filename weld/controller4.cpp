@@ -20,16 +20,6 @@ using namespace Eigen;
 
 const string robot_file = "./resources/mmp_panda3.urdf";
 
-#define A_SIDE_BASE_NAV       1
-#define A_SIDE_CORNER1        2
-#define B_SIDE_CORNER2        3
-#define C_SIDE_CORNER3        4
-#define D_SIDE_CORNER4        5
-
-#define BASE_DROP			  6
-
-
-int state = A_SIDE_BASE_NAV;
 //int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
 //int pull_counter = 0; // counter to check if drill is going into or out of hole
 //int drop_counter = 0; // Counter to check if arm is dropping after A-side, or after B-side
@@ -48,6 +38,18 @@ std::string MASSMATRIX_KEY;
 std::string CORIOLIS_KEY;
 std::string ROBOT_GRAVITY_KEY;
 
+const std::string HAPTIC_POS_KEY = "Haptic_POS";
+const std::string HAPTIC_ORIENTATION_KEY = "Haptic_ORIENTATION";
+const std::string HAPTIC_VELOCITY_KEY = "hAPTIC_VELOCITY";
+const std::string HAPTIC_FORCE_KEY = "Haptic_FORCE";
+const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
+const std::string HAPTIC_SWITCH_KEY = "Haptic_SWITCH";
+const std::string HAPTIC_INFO_KEY = "Haptic_INFO";
+const std::string EE_FORCE_SENSOR_FORCE_KEY = "sai2::optoforceSensor::6Dsensor::force";
+const std::string ACTIVE_STATE_KEY = "active_state";
+
+static const double fadeInTimeMS = 20;
+
 unsigned long long controller_counter = 0;
 
 const bool inertia_regularization = true;
@@ -59,6 +61,7 @@ int main() {
 	JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda::actuators::fgc";
 
 	// start redis client
+
 	auto redis_client = RedisClient();
 	redis_client.connect();
 
@@ -80,7 +83,7 @@ int main() {
 
 	/*** SET UP POSORI TASK***/
 	const string control_link = "linkTool";
-	const Vector3d control_point = Vector3d(0,0.104,0.203);
+	const Vector3d control_point = Vector3d(0,0,0.104);
 	auto posori_task = new Sai2Primitives::PosOriTask(robot, control_link, control_point);
 
 	#ifdef USING_OTG
@@ -93,16 +96,17 @@ int main() {
 
 	// controller gains
 	VectorXd posori_task_torques = VectorXd::Zero(dof);
-	posori_task->_kp_pos = 200.0; // 200.0
+	posori_task->_kp_pos = 20.0; // 200.0
 	posori_task->_kv_pos = 20.0; // 20.0
-	posori_task->_kp_ori = 200.0;
+	posori_task->_kp_ori = 20.0;
 	posori_task->_kv_ori = 20.0;
 
 	// controller desired positions
 	double tolerance = 0.001;
 	Vector3d x_des = Vector3d::Zero(3);
-	MatrixXd ori_des = Matrix3d::Zero();
-
+	Vector3d x_des_temp = Vector3d::Zero(3);
+	//MatrixXd ori_des = Matrix3d::Zero();
+	Eigen::Matrix3d ori_des;
 	/*** SET UP JOINT TASK ***/
 	auto joint_task = new Sai2Primitives::JointTask(robot);
 
@@ -116,11 +120,14 @@ int main() {
 
 	// controller gains
 	VectorXd joint_task_torques = VectorXd::Zero(dof);
-	joint_task->_kp = 250.0;
-	joint_task->_kv = 15.0;
+	joint_task->_kp = 50.0;
+	joint_task->_kv = 20.0;
 
 	// controller desired angles
 	VectorXd q_des = VectorXd::Zero(dof);
+	VectorXd q_hold = VectorXd::Zero(dof);
+	Vector3d P_hold = VectorXd::Zero(3);
+	Vector3d P_current = VectorXd::Zero(3);
 
 	/*** BEGIN LOOP ***/
 	// create a timer
@@ -129,6 +136,35 @@ int main() {
 	timer.setLoopFrequency(1000);
 	double start_time = timer.elapsedTime(); //secs
 	bool fTimerDidSleep = true;
+
+	Eigen::Vector3d hapticposition;
+	Eigen::Vector3d x_master;
+	Eigen::Vector3d x_slave;
+	Eigen::Matrix3d hapticorientation;
+	Eigen::Vector3d hapticvelocity;
+	Eigen::Vector3d hapticforce;
+	Eigen::Vector3d hapticmoment;
+	string button;
+
+	Eigen::VectorXd ee_sensed_force = Eigen::VectorXd::Zero(3);
+	Eigen::VectorXd ee_sensed_moment = Eigen::VectorXd::Zero(3);
+	Eigen::VectorXd ee_sensed_force_and_moment = Eigen::VectorXd::Zero(6); //robot
+	int hapticFadeInCounter = fadeInTimeMS;
+
+	enum states
+	{
+		AUTO_1,
+		AUTO_2,
+		B_SIDE_CORNER2,
+		C_SIDE_CORNER3,
+		D_SIDE_CORNER4,
+		HOLD_CALIBRATION,
+		HAPTICS
+	};
+
+	bool auto_state;
+	states state;
+	redis_client.set(ACTIVE_STATE_KEY, "AUTO_1");
 
 	while (runloop) {
 		// wait for next scheduled loop
@@ -142,155 +178,156 @@ int main() {
 		// update model
 		robot->updateModel();
 
+		redis_client.getEigenMatrixDerived(EE_FORCE_SENSOR_FORCE_KEY, ee_sensed_force_and_moment); // fixed simulated force sensor to also return moments
+		ee_sensed_force = ee_sensed_force_and_moment.head<3>();
+		ee_sensed_moment = ee_sensed_force_and_moment.tail<3>();
+		
+
 		if(controller_counter % 200 == 0) // %1000
 		{
 			cout << "current state: " << state << "\n";
 			cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
-			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
-			cout << "arm joint angles:" << robot->_q(4) << " " << robot->_q(5) << " " << robot->_q(6) << " " <<
-										robot->_q(7) << " " << robot->_q(8) << " " << robot->_q(9) << " " << robot->_q(10) << endl;
+			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << endl;
+			cout << "arm joint angles:" << robot->_q(3) << " " << robot->_q(4) << " " << robot->_q(5) << " " <<
+										robot->_q(6) << " " << robot->_q(7) << " " << robot->_q(8) << " " << robot->_q(9) << endl;
 			cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
+			cout << "haptic position:" << hapticposition(0) << " " << hapticposition(1) << " " << hapticposition(2) << endl;
+			cout << "hold position:" << P_hold(0) << " " << P_hold(1) << " " << P_hold(2) << endl;
+			cout << "xdes position:" << x_des(0) << " " << x_des(1) << " " << x_des(2) << endl;
+			cout << "joint torque" << command_torques(0) << command_torques(1) << command_torques(2) << command_torques(3) << command_torques(4) << command_torques(5) << command_torques(6) << command_torques(7) << command_torques(8) << command_torques(9) << endl;
+			cout << "force" << ee_sensed_force(0) << "," << ee_sensed_force(1) << "," << ee_sensed_force(2) << endl;
+			cout << "moment" << ee_sensed_moment(0) << "," << ee_sensed_moment(1) << "," << ee_sensed_moment(2) << endl;
+			cout << "base hold joint angles:" << q_hold(0) << " " << q_hold(1) << " " << q_hold(2) << endl;
+			cout << "arm hold joint angles:" << q_hold(3) << " " << q_hold(4) << " " << q_hold(5) << " " <<
+										q_hold(6) << " " << q_hold(7) << " " << q_hold(8) << " " << q_hold(9) << endl;
 			cout << endl; 
+			cout << "q_des base:" << q_des(0) << " " << q_des(1) << " " << q_des(2) << endl;
+			cout << "q_des joint:" << q_des(3) << " " << q_des(4) << " " << q_des(5) << " " <<
+										q_des(6) << " " << q_des(7) << " " << q_des(8) << " " << q_des(9) << endl;
+			cout << endl;
 			// cout << "counter: " << controller_counter << "\n";
 		}
 
+		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+		//cout << "Current state: " << activeState << "\r \n";
+
+		//band-aid fix 	TODO find out how to use enum as redis key //update: not a thing
+		if (activeStateString == "AUTO_1")
+			state = AUTO_1;
+		if (activeStateString == "HOLD_CALIBRATION")
+			state = HOLD_CALIBRATION;
+		if (activeStateString == "AUTO_2")
+			state = AUTO_2;
+		if (activeStateString == "HAPTICS")
+			state = HAPTICS;
+
 		// state switching
-		if(controller_counter % 500 == 0) 
+		switch(state)
 		{
-			state = A_SIDE_BASE_NAV; 
-			// Set desired task position
-			q_des << initial_q;
-			q_des(0) = -0.8;
-			q_des(1) = 2.5;
-			q_des(2) = 0;
-			q_des(3) = 0.14;
-			q_des(4) = -2.5;
-			q_des(5) = -0.25;
-			q_des(6) = 0;
-			q_des(7) = -2.967;
-			q_des(8) = -0.523;
-			q_des(9) = 1.57;
-			q_des(10) = 0;
-
-			// Set desired orientation
+		case AUTO_1:
+		{	
+			auto_state = 1;
+			q_des = initial_q;
+			q_des[0] = 0.30;
+			q_des[1] = 0;
 			ori_des.setIdentity();
-			q_des << robot->_q;
+			q_hold = q_des;
+			robot->rotation(ori_des, control_link);
+			robot->position(P_hold, control_link, control_point);
+			x_des = P_hold;
+			
+			if ((robot->_q - q_des).norm() <= 0.001)
+			{
+				joint_task->reInitializeTask();
+				posori_task->reInitializeTask();
+				state=HOLD_CALIBRATION;
+				redis_client.set(ACTIVE_STATE_KEY, "HOLD_CALIBRATION");
+			}
+			break;
+
 		}
 
-		if(controller_counter % 1000 == 0){// check if goal position reached
-				
-			state == A_SIDE_CORNER1;	
-			// Set desired task position
-			q_des(0) = -1;
-			q_des(1) = 2.5;
-			q_des(2) = 0;
-			q_des(3) = 0.14;
-			q_des(4) = -2.5;
-			q_des(5) = -0.25;
-			q_des(6) = 0;
-			q_des(7) = -2.967;
-			q_des(8) = -0.523;
-			q_des(9) = 1.57;
-			q_des(10) = 0;
-
-			// Set desired orientation
+		case AUTO_2:
+		{	
+			auto_state = 2;
+			q_des = initial_q;
+			q_des[0] = 2.82;
+			q_des[1] = 0;
 			ori_des.setIdentity();
+			q_hold = q_des;
+			robot->rotation(ori_des, control_link);
+			robot->position(P_hold, control_link, control_point);
+			x_des = P_hold;
+			if ((robot->_q - q_des).norm() <= 0.001)
+			{
+				joint_task->reInitializeTask();
+				posori_task->reInitializeTask();
+				state=HOLD_CALIBRATION;
+				redis_client.set(ACTIVE_STATE_KEY, "HOLD_CALIBRATION");
+			}
+			break;
 
-			//joint_task->reInitializeTask();
-			q_des << robot->_q;
 		}
 
-		//}
-			//else if(state == A_SIDE_CORNER1){ //
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//x_des << 0.0, 2.17, 0.16; 
-			// Set desired orientation
-			//ori_des = (AngleAxisd(M_PI, Vector3d::UnitX())
-					 //* AngleAxisd(-0.5*M_PI, Vector3d::UnitY())
-					 //* AngleAxisd(M_PI, Vector3d::UnitZ())).toRotationMatrix();
+		case HAPTICS:
+		{
+			redis_client.getEigenMatrixDerived(HAPTIC_POS_KEY, hapticposition);
+			redis_client.getCommandIs(HAPTIC_SWITCH_KEY, button);
+			q_des = q_hold;
+			x_des_temp = P_hold + Vector3d(-5 * hapticposition(0), -5 * hapticposition(1), 6* hapticposition(2));
+			
+			if(auto_state == 1)
+			{
+					if(x_des_temp(2) <= 0.2 && ((x_des_temp(0) >= -2.21 && x_des_temp(0) <= -2.05 && x_des_temp(1) >= -0.29 && x_des_temp(1) <= -0.14) || x_des_temp(0) <= -2.24 || x_des_temp(0) >= -2.01 || x_des_temp(1) <= -0.29 || x_des_temp(1) >= -0.10))
+					{
+						//(x_des_temp(0) >= -2.23 && x_des_temp(0) <= -2.03 && x_des_temp(1) >= -0.31 && x_des_temp(1) <= -0.12) ||
+						robot->position(P_current, control_link, control_point);
+						x_des = P_current;
+					}
+					else
+					{
+						x_des = x_des_temp;
+					}
+			}
+			if(auto_state == 2)
+			{
+					if(x_des_temp(2) <= 0.2 && ((x_des_temp(0) >= 0.31 && x_des_temp(0) <= 0.47 && x_des_temp(1) >= -0.29 && x_des_temp(1) <= -0.14) || x_des_temp(0) <= 0.28 || x_des_temp(0) >= 0.51 || x_des_temp(1) <= -0.29 || x_des_temp(1) >= -0.10))
+					{
+						//(x_des_temp(0) >= -2.23 && x_des_temp(0) <= -2.03 && x_des_temp(1) >= -0.31 && x_des_temp(1) <= -0.12) ||
+						robot->position(P_current, control_link, control_point);
+						x_des = P_current;
+					}
+					else
+					{
+						x_des = x_des_temp;
+					}
+			}
+			if(hapticposition(2) >= 0.05)
+			{
+				if(auto_state == 1)
+				{
+					x_des = x_des_temp;
+					joint_task->reInitializeTask();
+					posori_task->reInitializeTask();
+					state=AUTO_2;
+					redis_client.set(ACTIVE_STATE_KEY, "AUTO_2");
+				}
+			}		
+			break;
+		}
 
-			//if ((posori_task->_current_position - x_des).norm() < tolerance){
-                //joint_task->reInitializeTask();
-                //posori_task->reInitializeTask();
-                
-                // Advanced to the correct state depending if you are on your way up or down from holes
-                //if(elev_counter == 0){
-                	//state = B_SIDE_CORNER2;
-                	//elev_counter = 1;
-               // }
-               //else{
-                	//state = D_SIDE_CORNER4;
-                	//elev_counter = 0;
-                //} 
-			//}
-		//}
+		case HOLD_CALIBRATION:
+		{
+			robot->position(P_hold, control_link, control_point);
+			q_hold = robot->_q;;
+			break;
+		}
 
-		//else if(state == B_SIDE_CORNER2){ 
-
-			// Set desired task position
-			//x_des << -0.23, 2.43, 0.16;
-			// Set desired orientation
-			//ori_des = (AngleAxisd(M_PI, Vector3d::UnitX())
-					 //* AngleAxisd(-0.5*M_PI,  Vector3d::UnitY())
-					 //* AngleAxisd(M_PI, Vector3d::UnitZ())).toRotationMatrix();
-
-			//if ((posori_task->_current_position - x_des).norm() < tolerance){ //position of tool tip
-				//joint_task->reInitializeTask();
-				//posori_task->reInitializeTask();
-
-				// Advanced to the correct state depending if you are going into or pulling out of hole
-                //if(pull_counter == 0){
-                	//state = C_SIDE_CORNER3; // arrived to hole surface and proceeding to go in
-                	//pull_counter = 1;
-                //}
-                //else{
-                	//state = BASE_DROP; // just exited hole and moving to next hole
-                	//pull_counter = 0;
-               // } 
-			//}
-		//}
-
-		//else if(state == C_SIDE_CORNER3){ 
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//x_des << 0.00, 2.43, 0.16; 
-			// Set desired orientation
-			//ori_des = (AngleAxisd(M_PI, Vector3d::UnitX())
-					 //* AngleAxisd(-0.5*M_PI,  Vector3d::UnitY())
-					 //* AngleAxisd(M_PI, Vector3d::UnitZ())).toRotationMatrix();
-
-			//if ((posori_task->_current_position - x_des).norm() < tolerance){
-                //joint_task->reInitializeTask();
-                //posori_task->reInitializeTask();
-                
-                //state = A_SIDE_CORNER1; // advance to next state
-        	//}
-    	//}
-
-        //else if(state == D_SIDE_CORNER4){ 
-			// Set new position for opposite side of hole (i.e. add wall thickness)
-			//x_des << -0.23, 2.17, 0.16; 
-			// Set desired orientation
-			//ori_des = (AngleAxisd(M_PI, Vector3d::UnitX())
-					 //* AngleAxisd(-0.5*M_PI,  Vector3d::UnitY())
-					 //* AngleAxisd(M_PI, Vector3d::UnitZ())).toRotationMatrix();
-
-			//if ((posori_task->_current_position - x_des).norm() < tolerance){
-                //joint_task->reInitializeTask();
-                //posori_task->reInitializeTask();
-                
-                //state = B_SIDE_CORNER2; // advance to next state        
-        	//}
-    	//}
-		
-			//else if(state == BASE_DROP){
-			//q_des << robot->_q; // set desired joint
-			//q_des(3) = 0.7;
-			// Set desired orientation
-			//ori_des.setIdentity(); 
+		}
 	
 
 
-		if(state == A_SIDE_BASE_NAV || state == BASE_DROP || state == A_SIDE_CORNER1){
+		if(state == AUTO_1 || state == AUTO_2){
 			/*** PRIMARY JOINT CONTROL***/
 
 			joint_task->_desired_position = q_des;
@@ -309,6 +346,15 @@ int main() {
 		else{
 			/*** PRIMARY POSORI CONTROL W/ JOINT CONTROL IN NULLSPACE***/
 			// update controlller posiitons
+			// q_des[2] = 0;
+			// q_des[3] = -1.22173;
+			// q_des[4] = -0.523599;
+			// q_des[5] = -0;
+			// q_des[6] = -2.96706;
+			// q_des[7] = -0.523599;
+			// q_des[8] = 1.5708;
+			// q_des[9] = 0;
+
 			posori_task->_desired_position = x_des;
 			posori_task->_desired_orientation = ori_des;
 			joint_task->_desired_position = q_des;
@@ -324,9 +370,9 @@ int main() {
 			joint_task->computeTorques(joint_task_torques);
 
 			command_torques = posori_task_torques + joint_task_torques;
-			command_torques(0) = joint_task_torques(0);
-			command_torques(1) = joint_task_torques(1);
-			command_torques(2) = joint_task_torques(2);
+			//command_torques(0) = joint_task_torques(0);
+			//command_torques(1) = joint_task_torques(1);
+			//command_torques(2) = joint_task_torques(2);
 
 		}
 

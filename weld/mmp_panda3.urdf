@@ -44,22 +44,21 @@
 
 
   <!-- MOBILE BASE + LINK 0 OF PANDA ARM -->
-  <link name = "base_fix">
+  <!--<link name = "base_fix">
     <inertial>
       <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
       <mass value = "0.001" />
       <inertia ixx="1E-06" ixy="0.0" ixz="0.0" iyy="1E-06" iyz="0.0" izz="1E-06" />
     </inertial>
-  </link>
+  </link>-->
 
-  <link name = "base_z">
+  <link name = "base_link">
     <inertial>
-      <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+      <origin xyz="0.0 0.0 0.1757" rpy="0 0 0" />
       <mass value = "64.6" />
       <inertia ixx="1.721" ixy="0.0" ixz="0.0" iyy="1.712" iyz="0.0" izz="2.030" />
     </inertial>
     <visual>
-          <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
           <geometry>
             <!--<cylinder size="0.5 0.5 0.5" />
           </geometry>
@@ -202,19 +201,56 @@
       <geometry>
         <!-- <mesh filename="../../../model/Drill2_Full_Bolt/Drill2_Full_Bolt.obj"/> -->
         <mesh filename="../../../model/weldtool/weldtool.obj"/>
+        <!--cylinder radius="0.02" length="0.24"/-->
+        <!--cylinder radius="0.02" length="0.24"/-->
       </geometry>
     </visual>
-    <!--collision>
+    <!--<visual>
+      <origin xyz="0.48 0.25 -0.03" rpy="0 -1.57 0" />
       <geometry>
-        <mesh filename="../../../model/Drill2/Drill2.obj"/>
+        <cylinder radius="0.015" length="0.24"/>
       </geometry>
-    </collision>-->
+    </visual>
+    <visual>
+      <origin xyz="0.58 0.25 -0.03" rpy="0 -1.57 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.24"/>
+      </geometry>
+      <material name="material_blue">
+        <color rgba="0.3 0.3 0.9 1.0" />
+            </material>
+    </visual>
+    <visual>
+      <origin xyz="0.58 0.35 -0.03" rpy="0 -1.57 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.24"/>
+      </geometry>
+      <material name="material_red">
+        <color rgba="0.5 0.0 0.0 1.0" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0.58 0.35 0.07" rpy="0 -1.57 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.24"/>
+      </geometry>
+      <material name="material_green">
+        <color rgba="0.1 0.3 0.0 1.0" />
+      </material>
+    </visual>-->
+
+    <collision>
+      <origin xyz="0.48 0.25 -0.03" rpy="0 -1.57 0" />
+      <geometry>
+        <cylinder radius="0.015" length="0.24"/>
+      </geometry>
+    </collision>
   </link>
 
 
   <!-- JOINTS -->
   <joint name = "base_prismatic_x" type = "prismatic">
-    <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    <origin xyz = "-2.5 -0.2 0" rpy = "0 0 0"/>
     <parent link = "ground_link" />
     <child link= "base_x"/>
     <axis xyz = "1 0 0" />
@@ -241,30 +277,30 @@
   </joint>
 
   <joint name = "base_fixed" type = "fixed">
-    <origin xyz = "0 0 0" rpy = "0 0 1.57079632679"/>
+    <origin xyz = "0 0 0.15" rpy = "0 0 1.57079632679"/>
     <parent link = "base_theta" />
-    <child link= "base_fix"/>
+    <child link= "base_link"/>
     <axis xyz = "0 0 1" />
     <calibration rising="0.0" />
     <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
   </joint>
 
-  <joint name = "base_prismatic_z" type = "prismatic">
+  <!--<joint name = "base_prismatic_z" type = "fixed">
     <origin xyz = "0 0 0" rpy = "0 0 0"/>
     <parent link = "base_fix" />
     <child link= "base_z"/>
     <axis xyz = "0 0 1" />
     <calibration rising="0.14" />
     <limit effort="87" lower="0" upper="2.0" velocity="0.2" />
-  </joint>
+  </joint>-->
 
   <joint name="joint1" type="revolute">
       <safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
-      <origin rpy="0 0 1.5708" xyz="0 0 0.333"/>
-      <parent link="base_z"/>
+      <origin rpy="0 0 0" xyz="0 0 0.333"/>
+      <parent link="base_link"/>
       <child link="link1"/>
       <axis xyz="0 0 1"/>
-      <calibration falling="-90.0" />
+      <calibration falling="-70.0" />
       <limit effort="87" lower="-2.8973" upper="2.8973" velocity="2.1750"/>
   </joint>
 
@@ -274,7 +310,7 @@
       <parent link="link1"/>
       <child link="link2"/>
       <axis xyz="0 0 1"/>
-      <calibration falling="-0.0" />
+      <calibration falling="-30.0" />
       <limit effort="87" lower="-1.7628" upper="1.7628" velocity="2.1750"/>
   </joint>
 
