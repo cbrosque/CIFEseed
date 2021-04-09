@@ -83,9 +83,9 @@
         </material>
     </visual>
     <visual>
-      <origin xyz="0.0 0.0 0.025" rpy="0 0 1.1" />
+      <origin xyz="0.04 0.0 0.025" rpy="0 0 0" />
       <geometry>
-        <box size="0.16 0.02 0.01" />
+        <box size="0.08 0.02 0.01" />
       </geometry>
         <material name="material_blue">
           <color rgba="0 0 1 1"/>
@@ -159,7 +159,7 @@
   </joint> -->
 
   <joint name = "jointTool" type = "prismatic">
-    <origin xyz = "0 0 0" rpy = "0 0 2"/>
+    <origin xyz = "0 0 0" rpy = "0 0 1.57"/>
     <parent link = "base_fix" />
     <child link= "linkTool"/>
     <axis xyz = "0 0 1" />
