@@ -183,23 +183,32 @@ int main() {
 		robot->updateModel();
 
 		// Every 100 cycles, print the angles and current state
-		if(controller_counter % 1000 == 0) // %1000
-		{
-			cout << "current state: " << state << "\n";
-			cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
-			cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
-			cout << "arm joint angles:" << robot->_q(4) << " " << endl;
-			cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
-			cout << endl;
-			cout << "counter: " << controller_counter << "\n";
-		}
+		// if(controller_counter % 1000 == 0) // %1000
+		// {
+		// 	cout << "current state: " << state << "\n";
+		// 	cout << "current position:" << posori_task->_current_position(0) << " " << posori_task->_current_position(1) << " " << posori_task->_current_position(2) << endl;
+		// 	cout << "base joint angles:" << robot->_q(0) << " " << robot->_q(1) << " " << robot->_q(2) << " " << robot->_q(3) << endl;
+		// 	cout << "arm joint angles:" << robot->_q(4) << " " << endl;
+		// 	cout << "current speed:" << posori_task->_current_velocity(0) << " " << posori_task->_current_velocity(1) << " " << posori_task->_current_velocity(2) << endl;
+		// 	cout << endl;
+		// 	cout << "counter: " << controller_counter << "\n";
+		// }
 
 		// Use sensed force to switch controllers
 		sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
+
+		// Transform sensed_force to the flap contact point
+		MatrixXd contact_translation(3, 1);
+		contact_translation << 0.005,
+												 0,
+												 -0,075;
+		sensed_force = sensed_force + contact_translation;
+
+
 		// cout << abs(sensed_force(2)) << "\n";
-		if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
-			cout << "sensed force = " << sensed_force << "\n";
-		}
+		// if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
+		// 	cout << "sensed force = " << sensed_force << "\n";
+		// }
 
 		if (state == INITIAL_POS) {
 			joint_task->reInitializeTask();
@@ -225,7 +234,7 @@ int main() {
 					nozzle_pos = 0;
 				} else {
 					// set to nozzle down
-					q_des(3) = -0.02;
+					q_des(3) = -0.04;
 					state = NOZZLE_DOWN;
 					nozzle_pos = 1;
 				}
@@ -234,11 +243,16 @@ int main() {
 
 		else if (state == NOZZLE_DOWN) {
 			// When the nozzle is all the way down, go to POSITION_HOLD
-			if((robot->_q - q_des).norm() < tolerance && nozzle_pos == 1){
+			if (nozzle_pos == 1 && (abs(sensed_force(2)) > 0.005)) {
 				joint_task->reInitializeTask();
 				pc++;
 				state = POSITION_HOLD;
 			}
+			// if((robot->_q - q_des).norm() < tolerance && nozzle_pos == 1){
+			// 	joint_task->reInitializeTask();
+			// 	pc++;
+			// 	state = POSITION_HOLD;
+			// }
 		}
 
 		else if (state == NOZZLE_UP) {
