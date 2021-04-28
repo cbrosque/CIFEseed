@@ -46,7 +46,9 @@ const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
 const std::string HAPTIC_SWITCH_KEY = "Haptic_SWITCH";
 const std::string HAPTIC_INFO_KEY = "Haptic_INFO";
 const std::string EE_FORCE_SENSOR_FORCE_KEY = "sai2::optoforceSensor::6Dsensor::force";
+const std::string EE_FORCE_MAG_FORCE_KEY = "sai2::optoforceSensor::3Dsensor::force";
 const std::string ACTIVE_STATE_KEY = "active_state";
+const std::string BASE_POSE_KEY = "base_pose";
 
 static const double fadeInTimeMS = 20;
 
@@ -144,9 +146,11 @@ int main() {
 	Eigen::Vector3d hapticvelocity;
 	Eigen::Vector3d hapticforce;
 	Eigen::Vector3d hapticmoment;
+	Eigen::Vector3d base_pose_vec;
 	string button;
 
 	Eigen::VectorXd ee_sensed_force = Eigen::VectorXd::Zero(3);
+	Eigen::VectorXd ee_mag_force = Eigen::VectorXd::Zero(3);
 	Eigen::VectorXd ee_sensed_moment = Eigen::VectorXd::Zero(3);
 	Eigen::VectorXd ee_sensed_force_and_moment = Eigen::VectorXd::Zero(6); //robot
 	int hapticFadeInCounter = fadeInTimeMS;
@@ -194,7 +198,7 @@ int main() {
 			cout << "haptic position:" << hapticposition(0) << " " << hapticposition(1) << " " << hapticposition(2) << endl;
 			cout << "hold position:" << P_hold(0) << " " << P_hold(1) << " " << P_hold(2) << endl;
 			cout << "xdes position:" << x_des(0) << " " << x_des(1) << " " << x_des(2) << endl;
-			cout << "joint torque" << command_torques(0) << command_torques(1) << command_torques(2) << command_torques(3) << command_torques(4) << command_torques(5) << command_torques(6) << command_torques(7) << command_torques(8) << command_torques(9) << endl;
+			cout << "joint torque" << command_torques(0) << " " << command_torques(1) << " " << command_torques(2) << " " << command_torques(3) << " " << command_torques(4) << " " << command_torques(5) << " " << command_torques(6) << " " << command_torques(7) << " " << command_torques(8) << " " << command_torques(9) << endl;
 			cout << "force" << ee_sensed_force(0) << "," << ee_sensed_force(1) << "," << ee_sensed_force(2) << endl;
 			cout << "moment" << ee_sensed_moment(0) << "," << ee_sensed_moment(1) << "," << ee_sensed_moment(2) << endl;
 			cout << "base hold joint angles:" << q_hold(0) << " " << q_hold(1) << " " << q_hold(2) << endl;
@@ -207,6 +211,8 @@ int main() {
 			cout << endl;
 			// cout << "counter: " << controller_counter << "\n";
 		}
+		base_pose_vec = Vector3d (robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), robot->_q(2)-initial_q(2));
+		redis_client.setEigenMatrixJSON(BASE_POSE_KEY, base_pose_vec);
 
 		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
 		//cout << "Current state: " << activeState << "\r \n";
@@ -235,7 +241,7 @@ int main() {
 			robot->rotation(ori_des, control_link);
 			robot->position(P_hold, control_link, control_point);
 			x_des = P_hold;
-			
+			ee_mag_force << 0,0,0;
 			if ((robot->_q - q_des).norm() <= 0.001)
 			{
 				joint_task->reInitializeTask();
@@ -258,6 +264,7 @@ int main() {
 			robot->rotation(ori_des, control_link);
 			robot->position(P_hold, control_link, control_point);
 			x_des = P_hold;
+			ee_mag_force << 0,0,0;
 			if ((robot->_q - q_des).norm() <= 0.001)
 			{
 				joint_task->reInitializeTask();
@@ -274,9 +281,18 @@ int main() {
 			redis_client.getEigenMatrixDerived(HAPTIC_POS_KEY, hapticposition);
 			redis_client.getCommandIs(HAPTIC_SWITCH_KEY, button);
 			q_des = q_hold;
-			x_des_temp = P_hold + Vector3d(-5 * hapticposition(0), -5 * hapticposition(1), 6* hapticposition(2));
-			
-			if(auto_state == 1)
+			x_des_temp = P_hold + Vector3d(-6 * hapticposition(0), -6 * hapticposition(1), 6 * hapticposition(2));
+			x_des = x_des_temp;
+			if (ee_sensed_force.norm() > 2)
+			{
+				ee_sensed_force = 2 * ee_sensed_force / ee_sensed_force.norm();
+			}
+			robot->position(P_current, control_link, control_point);
+			ee_mag_force(0) = 1/(P_current[0]+2.75) + 1/(P_current[0]+2.509) + 1/(P_current[0]+0.23) + 1/(P_current[0]-0.11);
+			ee_mag_force(1) = 2*(1/(P_current[1]-2.161) + 1/(P_current[1]-2.402));
+			ee_mag_force(2) = -1/(P_current[2]-0.02);
+			//redis_client.setEigenMatrixDerived(HAPTIC_FORCE_KEY, Vector3d(1 * ee_sensed_force(0), 1 * ee_sensed_force(0), 1 * ee_sensed_force(0)));
+			/*if(auto_state == 1)
 			{
 					if(x_des_temp(2) <= 0.2 && ((x_des_temp(0) >= -2.21 && x_des_temp(0) <= -2.05 && x_des_temp(1) >= -0.29 && x_des_temp(1) <= -0.14) || x_des_temp(0) <= -2.24 || x_des_temp(0) >= -2.01 || x_des_temp(1) <= -0.29 || x_des_temp(1) >= -0.10))
 					{
@@ -301,7 +317,7 @@ int main() {
 					{
 						x_des = x_des_temp;
 					}
-			}
+			}*/
 			if(hapticposition(2) >= 0.05)
 			{
 				if(auto_state == 1)
@@ -319,14 +335,15 @@ int main() {
 		case HOLD_CALIBRATION:
 		{
 			robot->position(P_hold, control_link, control_point);
-			q_hold = robot->_q;;
+			q_hold = robot->_q;
+			ee_mag_force << 0,0,0;
 			break;
 		}
 
 		}
 	
-
-
+		redis_client.setEigenMatrixJSON(HAPTIC_FORCE_KEY, ee_mag_force);
+		redis_client.setEigenMatrixJSON(EE_FORCE_MAG_FORCE_KEY, ee_mag_force);
 		if(state == AUTO_1 || state == AUTO_2){
 			/*** PRIMARY JOINT CONTROL***/
 

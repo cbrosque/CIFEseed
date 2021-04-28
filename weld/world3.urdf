@@ -37,9 +37,21 @@
             </geometry>
         </visual>
         <visual>
-            <origin xyz="1.0 1.0 -0.1" rpy="0 0 0" />
+            <origin xyz="1.0 4.0 -0.1" rpy="0 0 0" />
             <geometry>
-                <mesh filename="./resources/../../../model/weld/temp3.obj" scale="1.0 1.0 1.0"/>
+                <mesh filename="./resources/../../../model/weld/temp4.obj" scale="1.0 1.0 1.0"/>
+            </geometry>
+        </visual>
+        <visual>
+            <origin xyz="-0.15 3.0 -0.2" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="./resources/../../../model/weld/YZ_steel.obj" scale="1.0 1.0 1.0"/>
+            </geometry>
+        </visual>
+        <visual>
+            <origin xyz="0.0 3.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="./resources/../../../model/weld/weld.obj" scale="1.0 1.0 1.0"/>
             </geometry>
         </visual>
         <!--<visual>
@@ -54,7 +66,7 @@
         <visual>
             <origin xyz="-2.6225 2.31 0.02" rpy="0 0 0" />
             <geometry>
-                <box size="0.20 0.20 0.01" />
+                <box size="0.20 0.20 0.2" />
             </geometry>
             <material name="material_blue">
                 <color rgba="0.3 0.3 0.9 1.0" />
@@ -72,7 +84,7 @@
          <visual>
             <origin xyz="-0.1225 2.31 0.02" rpy="0 0 0" />
             <geometry>
-                <box size="0.20 0.20 0.01" />
+                <box size="0.20 0.20 0.2" />
             </geometry>
             <material name="material_blue">
                 <color rgba="0.3 0.3 0.9 1.0" />
@@ -91,13 +103,13 @@
         <!--<collision>
             <origin xyz="-2.6225 2.31 0.02" rpy="0 0 0" />
             <geometry>
-                <box size="0.20 0.20 0.01" />
+                <box size="0.20 0.20 0.2" />
             </geometry>
         </collision>-->
          <collision>
             <origin xyz="-2.6225 2.31 0.01" rpy="0 0 0" />
             <geometry>
-                <box size="0.241 0.241 0.01" />
+                <box size="0.241 0.241 0.2" />
             </geometry>
          </collision>
         
@@ -114,7 +126,7 @@
         <collision>
             <origin xyz="-0.1225 2.31 0.01" rpy="0 0 0" />
             <geometry>
-                <box size="0.241 0.241 0.01" />
+                <box size="0.241 0.241 0.2" />
             </geometry>
          </collision>
     </static_object>
@@ -152,9 +164,9 @@
     </light> -->
 
     <camera name="camera_fixed">
-        <position xyz="-1.5 1.8 0.5" />
+        <position xyz="-1.63858 0.944477 0.538475" />
         <vertical xyz="0.0 0.0 2.0" />
-        <lookat xyz="-2.45 2.17 0.4" />
+        <lookat xyz="-2.30815 1.68221 0.452339" />
     </camera>
 
 </world>

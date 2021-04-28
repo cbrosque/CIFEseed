@@ -43,6 +43,8 @@ const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
 const std::string HAPTIC_SWITCH_KEY = "Haptic_SWITCH";
 const std::string HAPTIC_INFO_KEY = "Haptic_INFO";
 const std::string EE_FORCE_SENSOR_FORCE_KEY = "sai2::optoforceSensor::6Dsensor::force";
+const std::string ACTIVE_STATE_KEY = "active_state";
+const std::string BASE_POSE_KEY = "base_pose";
 
 // force sensor
 ForceSensorSim *force_sensor;
@@ -77,6 +79,8 @@ bool CameraZoom1 = false;
 bool fRotPanTilt = false;
 bool fRobotLinkSelect = false;
 
+chai3d::cShapeSphere* sphere0;
+
 chai3d::cGenericHapticDevicePtr hapticDevice;
 chai3d::cToolGripper *tool;
 chai3d::cHapticDeviceHandler *handler;
@@ -91,6 +95,7 @@ Eigen::Matrix3d hapticorientation;
 Eigen::Vector3d hapticvelocity;
 Eigen::Vector3d hapticforce;
 Eigen::Vector3d hapticmoment;
+Eigen::Vector3d base_pose_vec;
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -114,6 +119,20 @@ int main() {
 	//robot->_q(0) = -0.8;
 	robot->updateModel();
 	
+
+	//Sphere
+	sphere0 = new chai3d::cShapeSphere(0.05);
+    graphics->_world->addChild(sphere0);
+
+    // set position
+    sphere0->setLocalPos(-3.4,2.3, 0.2);
+    
+    // set material color
+    sphere0->m_material->setBlueCyan();
+
+    // create haptic effect and set properties
+    sphere0->createEffectSurface();
+    
 	//Haptic Devices
 	handler = new chai3d::cHapticDeviceHandler();
 	handler->getDevice(hapticDevice, 0);
@@ -152,9 +171,9 @@ int main() {
 
 	// load simulation world
 	auto sim = new Simulation::Sai2Simulation(world_file, false);
-	sim->setCollisionRestitution(0.3);
-	sim->setCoeffFrictionStatic(0.5);
-	sim->setCoeffFrictionDynamic(0.5);
+	sim->setCollisionRestitution(0.0);
+	sim->setCoeffFrictionStatic(0.8);
+	sim->setCoeffFrictionDynamic(0.8);
 
 	// read joint positions, velocities, update model
 	sim->getJointPositions("mmp_panda", robot->_q);
@@ -242,8 +261,8 @@ int main() {
 		cam_roll_axis.normalize();
 		Eigen::Vector3d cam_lookat_axis = camera_lookat;
 		cam_lookat_axis.normalize();
-		cout << "camera_pos" <<  camera_pos(0) << "," << camera_pos(1)  << "," << camera_pos(2)  << "\n"; 
-		cout << "camera_lookat" << camera_lookat(0) << "," << camera_lookat(1) << "," << camera_lookat(2) << "\n"; 
+		//cout << "camera_pos" <<  camera_pos(0) << "," << camera_pos(1)  << "," << camera_pos(2)  << "\n"; 
+		//cout << "camera_lookat" << camera_lookat(0) << "," << camera_lookat(1) << "," << camera_lookat(2) << "\n"; 
 		if (fTransXp) {
 			camera_pos = camera_pos + 0.05*cam_roll_axis;
 			camera_lookat = camera_lookat + 0.05*cam_roll_axis;
@@ -285,8 +304,8 @@ int main() {
 		}
 		if(CameraZoom1)
 		{
-			camera_pos = Vector3d(1.46758,0.644204,0.812377);
-			camera_lookat = Vector3d(0.540214,1.00539,0.714759);
+			camera_pos = Vector3d(1.40738,0.857643,0.546852);
+			camera_lookat = Vector3d(0.525109,1.32772,0.521878);
 		}
 		graphics->setCameraPose(camera_name, camera_pos, cam_up_axis, camera_lookat);
 		glfwGetCursorPos(window, &last_cursorx, &last_cursory);
@@ -344,6 +363,7 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 	
 	redis_client.setEigenMatrixDerived(HAPTIC_FORCE_KEY, hapticforce);
 	redis_client.setEigenMatrixDerived(HAPTIC_MOMENT_KEY, hapticmoment);
+	redis_client.setEigenMatrixDerived(BASE_POSE_KEY, Vector3d(0,0,0));
 
 	// create a timer
 	LoopTimer timer;
@@ -391,6 +411,20 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		redis_client.getEigenMatrixDerived(HAPTIC_MOMENT_KEY, hapticmoment);
 		moment_field = chai3d::cVector3d(hapticmoment);
 
+		redis_client.getEigenMatrixDerived(BASE_POSE_KEY, base_pose_vec);
+		//cout << "pose" << -3.4+base_pose_vec(0) << "," << 2.3+base_pose_vec(1) << "," << 0.2+base_pose_vec(2) << endl;
+		sphere0->setLocalPos(-3.4+base_pose_vec(0),2.3+base_pose_vec(1), 0.2+base_pose_vec(2));
+		//sphere0->setLocalPos(-2.75, 2.402, 0.02);
+		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+		if (activeStateString == "HAPTICS")
+		{
+			sphere0->m_material->setGreenLawn();
+		}
+		else
+		{
+			sphere0->m_material->setBlueCyan();
+		}
+
 		bool button = tool->getUserSwitch(0);
 		//cout << "button" << button << endl;
 		if (button)
@@ -432,8 +466,8 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		
 		Eigen::VectorXd sensed_force_and_moment_EE_Frame(6);
 		sensed_force_and_moment_EE_Frame << sensed_force, sensed_moment;
-		cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
-		cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
+		//cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
+		//cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
 
 		redis_client.setEigenMatrixDerived(EE_FORCE_SENSOR_FORCE_KEY, sensed_force_and_moment_EE_Frame);
 		
