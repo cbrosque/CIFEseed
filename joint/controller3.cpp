@@ -48,6 +48,13 @@ std::string MASSMATRIX_KEY;
 std::string CORIOLIS_KEY;
 std::string ROBOT_GRAVITY_KEY;
 
+// ORIENTATIONS (robot facing directions)
+double WEST = 0.0;
+double EAST = 3.1415;
+double NORTH = -1.5708;
+double SOUTH = 1.5708;
+
+
 unsigned long long controller_counter = 0;
 
 const bool inertia_regularization = true;
@@ -90,20 +97,20 @@ int main() {
 
 	// Set up positions for each task
 	MatrixXd positions(14, 4);
-	positions << 1.8, 2.4, 0.0, 0.0, // pos1a - down
-							 0.0, 2.4, 0.0, 0.0, // pos1b - up
-							 0.0, 3.7, 0.0, 0.0, // pos2a - down
-							 0.0, 2.4, 0.0, 0.0, // pos2b - up
-							 -5.7, 2.4, 0.0, 0.0, // pos3a - down
-							 0.0, 2.4, 0.0, 0.0, // pos3b - up
-							 0.0, 2.4, 0.0, 0.0, // pos4a - down
-							 0.0, -2.4, 0.0, 0.0, // pos4b - up
-							 1.8, -2.4, 0.0, 0.0, // pos5a
-							 0.0,-2.4, 0.0, 0.0, // pos5b
-							 0.0, -3.7, 0.0, 0.0, // pos6a
-							 0.0, -2.4, 0.0, 0.0, // pos6b
-							 -5.7, -2.4, 0.0, 0.0, // pos7a
-							 0.0, -2.4, 0.0, 0.0; // pos7b
+	positions << 1.8, 2.4, NORTH, 0.0, // pos1a - down - vert
+							 0.0, 2.4, NORTH, 0.0, // pos1b - up
+							 0.0, 3.7, WEST, 0.0, // pos2a - down - horiz
+							 0.0, 2.4, WEST, 0.0, // pos2b - up
+							 -5.7, 2.4, SOUTH, 0.0, // pos3a - down - vert
+							 0.0, 2.4, SOUTH, 0.0, // pos3b - up
+							 0.0, 2.4, WEST, 0.0, // pos4a - down - horiz
+							 0.0, -2.4, WEST, 0.0, // pos4b - up
+							 1.8, -2.4, NORTH, 0.0, // pos5a - vert
+							 0.0,-2.4, NORTH, 0.0, // pos5b
+							 0.0, -3.7, EAST, 0.0, // pos6a - horiz
+							 0.0, -2.4, EAST, 0.0, // pos6b
+							 -5.7, -2.4, SOUTH, 0.0, // pos7a - vert
+							 0.0, -2.4, SOUTH, 0.0; // pos7b
 
 
 	cout << "positions = " << positions << "\n";
@@ -169,6 +176,7 @@ int main() {
 	double pauseCounter = 0;
 	double pc = 0;
 	int nozzle_pos = 0; // 0 is up, 1 is down
+	// int nozzle_ori = 0; // 0 is horizontal, 1 is vertical
 
 	while (runloop) {
 		// wait for next scheduled loop
@@ -226,15 +234,18 @@ int main() {
 				// cout << "Made it to pos1a\n";
 				joint_task->reInitializeTask();
 
+				cout << "Reached position: " << q_des << "\n";
+				cout << "Nozzle is: " << nozzle_pos << "\n";
+
 				// After reaching goal, switch nozzle position
-				if (nozzle_pos == 1) {
+				if (nozzle_pos == 1) { // if it is down
 					// Set to nozzle up
 					q_des(3) = 0.0;
 					state = NOZZLE_UP;
 					nozzle_pos = 0;
-				} else {
+				} else { // if it is up
 					// set to nozzle down
-					q_des(3) = -0.04;
+					q_des(3) = -0.06;
 					state = NOZZLE_DOWN;
 					nozzle_pos = 1;
 				}
