@@ -98,10 +98,10 @@ int main() {
 
 	// controller gains
 	VectorXd posori_task_torques = VectorXd::Zero(dof);
-	posori_task->_kp_pos = 20.0; // 200.0
-	posori_task->_kv_pos = 20.0; // 20.0
-	posori_task->_kp_ori = 20.0;
-	posori_task->_kv_ori = 20.0;
+	posori_task->_kp_pos = 50.0; // 200.0
+	posori_task->_kv_pos = 50.0; // 20.0
+	posori_task->_kp_ori = 50.0;
+	posori_task->_kv_ori = 50.0;
 
 	// controller desired positions
 	double tolerance = 0.001;
@@ -234,8 +234,8 @@ int main() {
 		{	
 			auto_state = 1;
 			q_des = initial_q;
-			q_des[0] = 0.30;
-			q_des[1] = 0;
+			q_des[0] = 0.21;
+			q_des[1] = 0.1;
 			ori_des.setIdentity();
 			q_hold = q_des;
 			robot->rotation(ori_des, control_link);
@@ -258,7 +258,7 @@ int main() {
 			auto_state = 2;
 			q_des = initial_q;
 			q_des[0] = 2.82;
-			q_des[1] = 0;
+			q_des[1] = 0.1;
 			ori_des.setIdentity();
 			q_hold = q_des;
 			robot->rotation(ori_des, control_link);
@@ -281,16 +281,32 @@ int main() {
 			redis_client.getEigenMatrixDerived(HAPTIC_POS_KEY, hapticposition);
 			redis_client.getCommandIs(HAPTIC_SWITCH_KEY, button);
 			q_des = q_hold;
-			x_des_temp = P_hold + Vector3d(-6 * hapticposition(0), -6 * hapticposition(1), 6 * hapticposition(2));
+			x_des_temp = P_hold + Vector3d(-7 * hapticposition(0), -7 * hapticposition(1), 7 * hapticposition(2));
 			x_des = x_des_temp;
 			if (ee_sensed_force.norm() > 2)
 			{
 				ee_sensed_force = 2 * ee_sensed_force / ee_sensed_force.norm();
 			}
 			robot->position(P_current, control_link, control_point);
-			ee_mag_force(0) = 1/(P_current[0]+2.75) + 1/(P_current[0]+2.509) + 1/(P_current[0]+0.23) + 1/(P_current[0]-0.11);
-			ee_mag_force(1) = 2*(1/(P_current[1]-2.161) + 1/(P_current[1]-2.402));
-			ee_mag_force(2) = -1/(P_current[2]-0.02);
+			if ((abs(P_current[0]+2.325)<=0.01 || abs(P_current[0]+1.925)<=0.01 || abs(P_current[0]-0.225)<=0.01 || abs(P_current[0]-0.625)) <= 0.01 || abs(P_current[1]+0.3)<=0.01 || abs(P_current[1]-0.1)<=0.01 || abs(P_current[2]-0.02) <= 0.01)
+			{
+				break;
+
+			}
+			else
+			{
+				ee_mag_force(0) = 0.05*(1/(P_current[0]+2.325) + 1/(P_current[0]+1.925) + 1/(P_current[0]-0.225) + 1/(P_current[0]-0.625));
+				ee_mag_force(1) = 0.1*(1/(P_current[1]+0.3) + 1/(P_current[1]-0.1));
+				ee_mag_force(2) = -1/(P_current[2]-0.02);
+			}
+			if (ee_mag_force.norm() > 2)
+			{
+				ee_mag_force(0) = 2 * ee_mag_force(0) / ee_mag_force.norm();
+				ee_mag_force(1) = 2 * ee_mag_force(1) / ee_mag_force.norm();
+				ee_mag_force(2) = 8 * ee_mag_force(2) / ee_mag_force.norm();
+			}
+			
+			
 			//redis_client.setEigenMatrixDerived(HAPTIC_FORCE_KEY, Vector3d(1 * ee_sensed_force(0), 1 * ee_sensed_force(0), 1 * ee_sensed_force(0)));
 			/*if(auto_state == 1)
 			{
@@ -328,7 +344,12 @@ int main() {
 					state=AUTO_2;
 					redis_client.set(ACTIVE_STATE_KEY, "AUTO_2");
 				}
-			}		
+			}
+			//x_des << -2.325,-0.3,0.02;
+			//x_des << -2.325,0.1,0.02;
+			//x_des << -1.925,0.1,0.02;	
+			//x_des << 0.225,0.1,0.02;
+			//x_des << 0.625,0.1,0.02;	
 			break;
 		}
 
@@ -343,7 +364,7 @@ int main() {
 		}
 	
 		redis_client.setEigenMatrixJSON(HAPTIC_FORCE_KEY, ee_mag_force);
-		redis_client.setEigenMatrixJSON(EE_FORCE_MAG_FORCE_KEY, ee_mag_force);
+		redis_client.setEigenMatrixJSON(EE_FORCE_MAG_FORCE_KEY, ee_mag_force+ee_sensed_force);
 		if(state == AUTO_1 || state == AUTO_2){
 			/*** PRIMARY JOINT CONTROL***/
 
