@@ -38,6 +38,10 @@ const std::string EE_MOMENT_KEY = "cs225a::sensor::moment";
 // - read
 const std::string JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda::actuators::fgc";
 
+// For the sphere
+const std::string ACTIVE_STATE_KEY = "active_state";
+const std::string NOZZLE_POS_KEY = "nozzle_pos";
+
 RedisClient redis_client;
 
 // force sensors
@@ -58,6 +62,9 @@ void keySelect(GLFWwindow* window, int key, int scancode, int action, int mods);
 // callback when a mouse button is pressed
 void mouseClick(GLFWwindow* window, int button, int action, int mods);
 
+// Pouring indicator - sphere
+chai3d::cShapeSphere* sphere0;
+
 // flags for scene camera movement
 bool fTransXp = false;
 bool fTransXn = false;
@@ -71,6 +78,9 @@ bool fRobotLinkSelect = false;
 const Eigen::Vector3d sensor_pos_in_link = Eigen::Vector3d(0.0,0.0,0.1);
 Eigen::Vector3d sensed_force;
 Eigen::Vector3d sensed_moment;
+
+// For the sphere
+Eigen::Vector3d nozzle_pos_vec;
 
 int main() {
 	cout << "Loading URDF world model file: " << world_file << endl;
@@ -93,6 +103,13 @@ int main() {
 	auto robot = new Sai2Model::Sai2Model(robot_file, false);
 	//robot->_q(0) = -0.8;
 	robot->updateModel();
+
+	// Initialize sphere
+	sphere0 = new chai3d::cShapeSphere(0.025);
+	graphics->_world->addChild(sphere0);
+	sphere0->setLocalPos(0.0, 0.0, 0.0);
+	sphere0->m_material->setGreenLime();
+	sphere0->createEffectSurface();
 
 	// load simulation world
 	auto sim = new Simulation::Sai2Simulation(world_file, false);
@@ -337,6 +354,26 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		force_sensor->update(sim);
 		force_sensor->getForceLocalFrame(sensed_force);  // refer to ForceSensorSim.h in sai2-common/src/force_sensor (can also get wrt global frame)
     force_sensor->getMomentLocalFrame(sensed_moment);
+
+		// Handle sphere updates
+		redis_client.getEigenMatrixDerived(NOZZLE_POS_KEY, nozzle_pos_vec);
+		sphere0->setLocalPos(nozzle_pos_vec(0), nozzle_pos_vec(1), nozzle_pos_vec(2));
+		if (nozzle_pos_vec(3) < 0) {
+			std::cout << "Setting sphere to red" << std::endl;
+			sphere0->m_material->setRed();
+		} else {
+			sphere0->m_material->setGreenLime();
+		}
+		// try {
+		// 	string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+		// 	if (activeStateString == "POURING") {
+		// 		sphere0->m_material->setGreenLawn();
+		// 	} else {
+		// 		sphere0->m_material->setBlueCyan();
+		// 	}
+		// } catch (int e) {
+		// 	std::cout << "Error: " << e << std::endl;
+		// }
 
 		// write new robot state to redis
 		redis_client.setEigenMatrixJSON(JOINT_ANGLES_KEY, robot->_q);

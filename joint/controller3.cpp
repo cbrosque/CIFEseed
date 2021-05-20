@@ -69,6 +69,11 @@ int main() {
 	const std::string EE_FORCE_KEY = "cs225a::sensor::force";
 	const std::string EE_MOMENT_KEY = "cs225a::sensor::moment";
 
+	// Add state tracking for simulation
+	const std::string ACTIVE_STATE_KEY = "active_state";
+	const std::string NOZZLE_POS_KEY = "nozzle_pos";
+	Eigen::Vector3d nozzle_pos_vec;
+
 	// start redis client
 	auto redis_client = RedisClient();
 	redis_client.connect();
@@ -177,6 +182,7 @@ int main() {
 	double pc = 0;
 	int nozzle_pos = 0; // 0 is up, 1 is down
 	// int nozzle_ori = 0; // 0 is horizontal, 1 is vertical
+	redis_client.set(ACTIVE_STATE_KEY, "INITIAL");
 
 	while (runloop) {
 		// wait for next scheduled loop
@@ -201,6 +207,13 @@ int main() {
 		// 	cout << endl;
 		// 	cout << "counter: " << controller_counter << "\n";
 		// }
+
+		// Update position of sphere
+		nozzle_pos_vec = Vector3d(robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), robot->_q(3));
+		if (nozzle_pos == 1) {
+			nozzle_pos_vec(3) = -0.02;
+		}
+		redis_client.setEigenMatrixJSON(NOZZLE_POS_KEY, nozzle_pos_vec);
 
 		// Use sensed force to switch controllers
 		sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
@@ -326,6 +339,13 @@ int main() {
 
 		// send to redis
 		redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
+
+		// Update sphere position
+		// if (nozzle_pos == 1 && state == MOVING) {
+		// 	redis_client.set(ACTIVE_STATE_KEY, "POURING");
+		// } else {
+		// 	redis_client.set(ACTIVE_STATE_KEY, "MOVING");
+		// }
 
 		controller_counter++;
 	}
