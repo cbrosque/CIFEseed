@@ -103,7 +103,7 @@ int main() {
 							 0.0, 2.4, WEST, 0.0, // pos2b - up
 							 -5.7, 2.4, SOUTH, 0.0, // pos3a - down - vert
 							 0.0, 2.4, SOUTH, 0.0, // pos3b - up
-							 0.0, 2.4, WEST, 0.0, // pos4a - down - horiz
+							 0.0, 2.35, WEST, 0.0, // pos4a - down - horiz
 							 0.0, -2.4, WEST, 0.0, // pos4b - up
 							 1.8, -2.4, NORTH, 0.0, // pos5a - vert
 							 0.0,-2.4, NORTH, 0.0, // pos5b

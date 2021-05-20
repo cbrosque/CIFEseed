@@ -42,3 +42,11 @@ bin/
 
 # Ruta
 dump.rdb
+joint/CMakeCache.txt
+joint/CMakeFiles/
+joint/Makefile
+joint/bolting_two_arms/
+joint/cmake_install.cmake
+joint/gui_weld/
+joint/joint/
+joint/weld/
