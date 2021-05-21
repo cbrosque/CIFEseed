@@ -358,8 +358,9 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		// Handle sphere updates
 		redis_client.getEigenMatrixDerived(NOZZLE_POS_KEY, nozzle_pos_vec);
 		sphere0->setLocalPos(nozzle_pos_vec(0), nozzle_pos_vec(1), nozzle_pos_vec(2));
+		// std::cout << "Nozzle pos vec = " << nozzle_pos_vec(3) << std::endl;
 		if (nozzle_pos_vec(3) < 0) {
-			std::cout << "Setting sphere to red" << std::endl;
+			// std::cout << "Setting sphere to red" << std::endl;
 			sphere0->m_material->setRed();
 		} else {
 			sphere0->m_material->setGreenLime();

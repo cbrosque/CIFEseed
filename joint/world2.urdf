@@ -8,18 +8,15 @@
     </robot>
 
     <static_object name="building">
-      <origin xyz="20.0 0.0 -0.04" rpy="0 0 3.1415" />
+      <origin xyz="-2.0 0.0 -0.04" rpy="0 0 0" />
       <visual>
-      <origin xyz="20.0 0.0 -0.04" rpy="0 0 3.1415" />
+      <origin xyz="-2.0 0.0 -0.04" rpy="0 0 0" />
         <geometry>
             <mesh filename="./resources/../../../model/Joints2/YZ_steel.obj" scale="0.5 0.5 0.5"/>
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
-        </material>
       </visual>
       <collision>
-        <origin xyz="20.0 0.0 -0.04" rpy="0 0 3.1415" />
+        <origin xyz="-2.0 0.0 -0.04" rpy="0 0 0" />
         <geometry>
             <mesh filename="./resources/../../../model/Joints2/YZ_steel.obj" scale="0.5 0.5 0.5"/>
         </geometry>

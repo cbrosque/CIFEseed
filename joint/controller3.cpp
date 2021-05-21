@@ -211,8 +211,11 @@ int main() {
 		// Update position of sphere
 		nozzle_pos_vec = Vector3d(robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), robot->_q(3));
 		if (nozzle_pos == 1) {
-			nozzle_pos_vec(3) = -0.02;
+			// std::cout << "Nozzle is down" << std::endl;
+			Vector3d newNozzlePos = Vector3d(nozzle_pos_vec(0), nozzle_pos_vec(1), -6);
+			nozzle_pos_vec << newNozzlePos;
 		}
+		// std::cout << "nozzle_pos_vec = " << nozzle_pos_vec << std::endl;
 		redis_client.setEigenMatrixJSON(NOZZLE_POS_KEY, nozzle_pos_vec);
 
 		// Use sensed force to switch controllers
