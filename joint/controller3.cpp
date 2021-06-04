@@ -261,7 +261,7 @@ int main() {
 					nozzle_pos = 0;
 				} else { // if it is up
 					// set to nozzle down
-					q_des(3) = -0.06;
+					q_des(3) = -0.1;
 					state = NOZZLE_DOWN;
 					nozzle_pos = 1;
 				}

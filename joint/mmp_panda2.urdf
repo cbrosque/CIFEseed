@@ -37,7 +37,7 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="../../../model/jointcart2/joint cart2.obj" />
+        <mesh filename="../../../model/jointcart2/jointcart2_wheeled.obj" />
       </geometry>
     </visual>
   </link>
@@ -68,7 +68,7 @@
 <!-- PRISMATIC LINK -->
   <link name="linkTool">
     <inertial>
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <origin xyz="0 0 0.0" rpy="0 0 0" />
       <mass value="0.02" />
       <inertia ixx="0.3" iyy="0.3" izz="0.3" ixy="0" ixz="0" iyz="0" />
     </inertial>
@@ -114,7 +114,7 @@
 
   <!-- JOINTS -->
   <joint name = "base_prismatic_x" type = "prismatic">
-    <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    <origin xyz = "0 0 0.01" rpy = "0 0 0"/>
     <parent link = "ground_link" />
     <child link= "base_x"/>
     <axis xyz = "1 0 0" />
@@ -123,7 +123,7 @@
   </joint>
 
   <joint name = "base_prismatic_y" type = "prismatic">
-    <origin xyz = "0 0 0" rpy = "0 0 0"/>
+    <origin xyz = "0 0 0.01" rpy = "0 0 0"/>
     <parent link = "base_x" />
     <child link= "base_y"/>
     <axis xyz = "0 1 0" />
@@ -132,7 +132,7 @@
   </joint>
 
   <joint name = "base_revolute" type = "revolute">
-    <origin xyz = "0 0 0.0" rpy = "0 0 0"/>
+    <origin xyz = "0 0 0.01" rpy = "0 0 0"/>
     <parent link = "base_y" />
     <child link= "base_theta"/>
     <axis xyz = "0 0 1" />
@@ -141,7 +141,7 @@
   </joint>
 
   <joint name = "base_fixed" type = "fixed">
-    <origin xyz = "0 0 0" rpy = "0 0 1.57079632679"/>
+    <origin xyz = "0 0 0.01" rpy = "0 0 1.57079632679"/>
     <parent link = "base_theta" />
     <child link= "base_fix"/>
     <axis xyz = "0 0 1" />
@@ -159,7 +159,7 @@
   </joint> -->
 
   <joint name = "jointTool" type = "prismatic">
-    <origin xyz = "0 0 0" rpy = "0 0 1.57"/>
+    <origin xyz = "0 0 0.01" rpy = "0 0 1.57"/>
     <parent link = "base_fix" />
     <child link= "linkTool"/>
     <axis xyz = "0 0 1" />
