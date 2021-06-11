@@ -43,7 +43,7 @@ ax1.legend(loc=3)
 
 ax2.set_xlabel('time')
 ax2.set_ylabel('moment')
-ax2.title.set_text('Force Received')
+ax2.title.set_text('Moment Received')
 ax2.legend(loc=3)
 
 ax3.set_xlabel('time')
