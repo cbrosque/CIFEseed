@@ -22,7 +22,7 @@ void sighandler(int sig)
 using namespace std;
 using namespace Eigen;
 
-const string robot_file = "./resources/mmp_panda2.urdf";
+const string robot_file = "./resources/joint_robot.urdf";
 
 // State Machine Definition
 #define INITIAL_POS				1 // Starting position
