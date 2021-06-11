@@ -50,3 +50,4 @@ joint/cmake_install.cmake
 joint/gui_weld/
 joint/joint/
 joint/weld/
+joint/.DS_Store

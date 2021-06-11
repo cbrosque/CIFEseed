@@ -3,7 +3,7 @@
 <world name="world" gravity="0.0 0.0 -9.81">
 
     <robot name="mmp_panda">
-        <model dir="./resources" path="mmp_panda2.urdf" name="mmp_panda" />
+        <model dir="./resources" path="joint_robot.urdf" name="mmp_panda" />
         <origin xyz="0 0 0" rpy="0 0 0" />
     </robot>
 
