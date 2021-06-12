@@ -31,9 +31,9 @@ const string robot_file = "./resources/joint_robot.urdf";
 #define NOZZLE_DOWN				4	// Move nozzle down until force felt exceeds threshold (task space)
 #define POURING_RIGHT			5	// Track the groove and move right w/nozzle down until force felt changes (task space?) -- or just move to next spot
 #define NOZZLE_UP					6	// Move nozzle up back to initial position
-
+#define HAPTICS                 7
 int state = INITIAL_POS;
-
+int prevState = HAPTICS;
 
 // redis keys:
 // - read:
@@ -47,6 +47,8 @@ std::string JOINT_TORQUES_COMMANDED_KEY;
 std::string MASSMATRIX_KEY;
 std::string CORIOLIS_KEY;
 std::string ROBOT_GRAVITY_KEY;
+
+const std::string HAPTIC_POS_KEY = "Haptic_POS";
 
 // ORIENTATIONS (robot facing directions)
 double WEST = 0.0;
@@ -168,7 +170,10 @@ int main() {
 
 	// controller desired angles
 	VectorXd q_des = VectorXd::Zero(dof);
+	VectorXd q_hold = VectorXd::Zero(dof);
+	VectorXd q_haptics = VectorXd::Zero(dof);
 
+	Eigen::Vector3d hapticposition;
 	/*** BEGIN LOOP ***/
 	// create a timer
 	LoopTimer timer;
@@ -183,7 +188,7 @@ int main() {
 	int nozzle_pos = 0; // 0 is up, 1 is down
 	// int nozzle_ori = 0; // 0 is horizontal, 1 is vertical
 	redis_client.set(ACTIVE_STATE_KEY, "INITIAL");
-
+	bool inHaptics = false;
 	while (runloop) {
 		// wait for next scheduled loop
 		timer.waitForNextLoop();
@@ -233,6 +238,27 @@ int main() {
 		// if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
 		// 	cout << "sensed force = " << sensed_force << "\n";
 		// }
+		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+		if ((activeStateString == "HAPTICS") && (inHaptics == false)){
+			prevState = state;
+			state = HAPTICS;
+			inHaptics = true;
+			joint_task->reInitializeTask();
+			q_hold << robot->_q;
+		}
+		else if ((activeStateString == "RESUME") && (inHaptics == true)){
+			state = prevState;
+			inHaptics = false;
+			joint_task->reInitializeTask();
+		}
+
+		if(controller_counter % 1000 == 0) // %1000
+		{
+			cout << "state" << state << "prevState" << prevState << endl;
+			cout << "q_des" << q_des << endl;
+			cout << "pc " << pc << "\n";
+		}
+
 
 		if (state == INITIAL_POS) {
 			joint_task->reInitializeTask();
@@ -307,6 +333,13 @@ int main() {
 				state = MOVING;
 			}
 		}
+		else if (state == HAPTICS) {
+			redis_client.getEigenMatrixDerived(HAPTIC_POS_KEY, hapticposition);
+			q_haptics(0) = q_hold(0) + 10.0*hapticposition(0);
+			q_haptics(1) = q_hold(1) + 10.0*hapticposition(1);
+			q_haptics(2) = q_hold(2);
+			q_haptics(3) = q_hold(3) + hapticposition(2);
+		}
 
 		if (state == MOVING || state == NOZZLE_DOWN || state == NOZZLE_UP) {
 			/* Primary Joint Task Control */
@@ -335,6 +368,22 @@ int main() {
 
 			command_torques = joint_task_torques;
 		}
+
+		else if (state == HAPTICS) {
+			// Maintain all joint angles at the current position
+			joint_task->_desired_position = q_haptics;
+
+			// update task model and set hierarchy
+			N_prec.setIdentity();
+			joint_task->updateTaskModel(N_prec);
+
+			// compute torques
+			joint_task->computeTorques(joint_task_torques);
+
+			command_torques = joint_task_torques;
+		}
+
+
 		// else if (state == NOZZLE_DOWN || state == NOZZLE_UP) {
 		// 	/* Primary POSORI Control */
 		// 	cout << "posori control\n";
