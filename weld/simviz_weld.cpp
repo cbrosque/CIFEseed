@@ -22,8 +22,8 @@ void sighandler(int){fSimulationRunning = false;}
 using namespace std;
 using namespace Eigen;
 
-const string world_file = "./resources/world3.urdf";
-const string robot_file = "./resources/mmp_panda3.urdf";
+const string world_file = "./resources/world_weld.urdf";
+const string robot_file = "./resources/mmp_panda_weld.urdf";
 const string obj_file = "mmp_panda_tool_no_collision.urdf";
 const string robot_name = "mmp_panda";
 const string camera_name = "camera_fixed";

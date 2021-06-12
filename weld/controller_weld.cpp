@@ -18,7 +18,7 @@ void sighandler(int sig)
 using namespace std;
 using namespace Eigen;
 
-const string robot_file = "./resources/mmp_panda3.urdf";
+const string robot_file = "./resources/mmp_panda_weld.urdf";
 
 //int elev_counter = 0; // Counter to check whether arm is ascending or descending to point parallel to bottom of beam
 //int pull_counter = 0; // counter to check if drill is going into or out of hole

@@ -3,7 +3,7 @@
 <world name="world" gravity="0.0 0.0 -9.81">
 
     <robot name="mmp_panda">
-        <model dir="./resources" path="mmp_panda3.urdf" name="mmp_panda" />
+        <model dir="./resources" path="mmp_panda_weld.urdf" name="mmp_panda" />
         <origin xyz="-1 2.5 0.0" rpy="0 0 0" />
     </robot>
 
@@ -39,7 +39,7 @@
         <visual>
             <origin xyz="1.0 4.0 -0.1" rpy="0 0 0" />
             <geometry>
-                <mesh filename="./resources/../../../model/weld/temp4.obj" scale="1.0 1.0 1.0"/>
+                <mesh filename="./resources/../../../model/weld/wall.obj" scale="1.0 1.0 1.0"/>
             </geometry>
         </visual>
         <visual>
