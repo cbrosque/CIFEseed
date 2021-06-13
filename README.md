@@ -39,11 +39,24 @@ Construction project from CS225a Experimental Robotics Spring 2019-20. The team 
 
 ## joint_haptics:
 - Haptic feature: the user can intervene through haptic teleoperation (which allows them to feel the joint) and when they are done, resume and continue the autonomous task.
+- To run the code:  
+  1) From the CIFEseed/build directory: cmake .. && make -j4 
+  2) From any directory in a tab of its own: redis-server
+  3) From CIFEseed/bin/joint_haptics: cd ../../bin/joint_haptics && ./simviz_joint_haptics  
+  4) From CIFEseed/bin/joint_haptics in another tab: cd ../../bin/joint_haptics && ./controller_joint_haptics
+  5) Launch redis client in another tab: redis-cli; to set haptics: set active_state HAPTICS; to continue autonomous state: set active_state RESUME
+
 
 ## weld_haptics: 
 - Task description: Find the perimiter of a rectangular steel anchor, find and weld two corners, then weld the entire perimiter and move to the next anchor
 - World: the file world.urdf uses mmp_panda_weld.urdf which is a mobile base (visuals are a small cart), with a panda robot, and a welding tool end-effector
 - Notes: combines autonomous navitation with haptic exploration of the steel anchor
+- To run the code:  
+  1) From the CIFEseed/build directory: cmake .. && make -j4 
+  2) From any directory in a tab of its own: redis-server
+  3) From CIFEseed/bin/weld_haptics: cd ../../bin/weld_haptics && ./simviz_weld  
+  4) From CIFEseed/bin/weld_haptics in another tab: cd ../../bin/ weld_haptics && ./controller_weld
+  5) Launch redis client in another tab: redis-cli; to set haptics: set active_state HAPTICS; to continue autonomous state lift the haptic device
     
 # 2. Graphical User Interfaces
 Uses sai2-interfaces to modify controllers in a more intuitive, visual way: https://github.com/manips-sai-org/sai2-interfaces
