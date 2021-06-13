@@ -4,13 +4,13 @@ include_directories(${SAI2-PRIMITIVES_INCLUDE_DIRS})
 add_definitions(${SAI2-PRIMITIVES_DEFINITIONS})
 
 # create an executable
-set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CS225A_BINARY_DIR}/joint)
-ADD_EXECUTABLE (simviz_joint simviz.cpp ${CS225A_COMMON_SOURCE})
-ADD_EXECUTABLE (controller_joint controller.cpp ${CS225A_COMMON_SOURCE})
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CS225A_BINARY_DIR}/joint_haptics)
+ADD_EXECUTABLE (simviz_joint_haptics simviz.cpp ${CS225A_COMMON_SOURCE})
+ADD_EXECUTABLE (controller_joint_haptics controller.cpp ${CS225A_COMMON_SOURCE})
 
 # and link the library against the executable
-TARGET_LINK_LIBRARIES (simviz_joint ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
-TARGET_LINK_LIBRARIES (controller_joint ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
+TARGET_LINK_LIBRARIES (simviz_joint_haptics ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
+TARGET_LINK_LIBRARIES (controller_joint_haptics ${CS225A_COMMON_LIBRARIES} ${SAI2-PRIMITIVES_LIBRARIES})
 
 # export resources such as model files.
 # NOTE: this requires an install build
