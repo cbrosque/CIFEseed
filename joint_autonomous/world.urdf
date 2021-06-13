@@ -1,0 +1,373 @@
+<?xml version="1.0" ?>
+
+<world name="world" gravity="0.0 0.0 -9.81">
+
+    <robot name="mmp_panda">
+        <model dir="./resources" path="joint_robot.urdf" name="mmp_panda" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </robot>
+
+    <static_object name="building">
+      <origin xyz="-2.0 0.0 -0.04" rpy="0 0 0" />
+      <visual>
+      <origin xyz="-2.0 0.0 -0.04" rpy="0 0 0" />
+        <geometry>
+            <mesh filename="./resources/../../../model/Joints2/YZ_steel.obj" scale="0.5 0.5 0.5"/>
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="-2.0 0.0 -0.04" rpy="0 0 0" />
+        <geometry>
+            <mesh filename="./resources/../../../model/Joints2/YZ_steel.obj" scale="0.5 0.5 0.5"/>
+        </geometry>
+      </collision>
+    </static_object>
+
+    <!--<static_object name="Floor">
+        <origin xyz="0.0 0.0 -0.05" rpy="0 0 0" />
+        <collision>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="3.0 3.0 0.1" />
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+                <box size="3.0 3.0 0.1" />
+            </geometry>
+            <material name="material_gray">
+                <color rgba="0.6 0.6 0.6 1.0" />
+            </material>
+        </visual>
+        <origin xyz="0 -0.5 0.0" rpy="0 0 0.3010693" />
+    </static_object> -->
+
+    <static_object name="bottom">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- bottom -->
+        <origin xyz="-1.95 0.0 -0.045" rpy="0 0 0" />
+        <geometry>
+            <box size="30 30 0.025" />
+            <!-- <box size="7.5 7.5 0.025" /> -->
+        </geometry>
+        <material name="material_purple">
+          <color rgba="1.0 0 1.0 1.0" />
+        </material>
+      </visual>
+      <collision>
+        <!-- bottom -->
+        <origin xyz="-1.95 0.0 -0.045" rpy="0 0 0" />
+        <geometry>
+            <box size="30 30 0.025" />
+            <!-- <box size="7.5 7.5 0.025" /> -->
+        </geometry>
+      </collision>
+    </static_object>
+
+    <static_object name="panelA">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- A -->
+        <origin xyz="-2.85 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="5.67 4.77 0.025" />
+        </geometry>
+        <material name="material_yellow">
+          <color rgba="1.0 1.0 0.0 0.2" />
+        </material>
+      </visual>
+      <collision>
+        <!-- A -->
+        <origin xyz="-2.85 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="5.67 4.77 0.025" />
+        </geometry>
+        <material name="material_yellow">
+          <color rgba="1.0 1.0 0.0 0.2" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelB">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- B -->
+        <origin xyz="0.9 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="1.77 4.77 0.025" />
+        </geometry>
+        <material name="material_cyan">
+          <color rgba="0.0 1.0 1.0 0.2" />
+        </material>
+      </visual>
+      <collision>
+        <!-- B -->
+        <origin xyz="0.9 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="1.77 4.77 0.025" />
+        </geometry>
+        <material name="material_cyan">
+          <color rgba="0.0 1.0 1.0 0.2" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelC">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- C -->
+        <origin xyz="0.9 3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="1.77 1.32 0.025" />
+        </geometry>
+        <material name="material_yellow">
+          <color rgba="1.0 1.0 0.0 0.2" />
+        </material>
+      </visual>
+      <collision>
+        <!-- C -->
+        <origin xyz="0.9 3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="1.77 1.32 0.025" />
+        </geometry>
+        <material name="material_yellow">
+          <color rgba="1.0 1.0 0.0 0.2" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelD">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- D -->
+        <origin xyz="-2.85 3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="5.67 1.32 0.025" />
+        </geometry>
+        <material name="material_cyan">
+          <color rgba="0.0 1.0 1.0 0.2" />
+        </material>
+      </visual>
+      <collision>
+        <!-- D -->
+        <origin xyz="-2.85 3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="5.67 1.32 0.025" />
+        </geometry>
+        <material name="material_cyan">
+          <color rgba="0.0 1.0 1.0 0.2" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelE">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- E -->
+        <origin xyz="0.9 -3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="1.77 1.32 0.025" />
+        </geometry>
+        <material name="material_yellow">
+          <color rgba="1.0 1.0 0.0 0.2" />
+        </material>
+      </visual>
+      <collision>
+        <!-- E -->
+        <origin xyz="0.9 -3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="1.77 1.32 0.025" />
+        </geometry>
+        <material name="material_yellow">
+          <color rgba="1.0 1.0 0.0 0.2" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelF">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <!-- F -->
+        <origin xyz="-2.85 -3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="5.67 1.32 0.025" />
+        </geometry>
+        <material name="material_cyan">
+          <color rgba="0.0 1.0 1.0 0.2" />
+        </material>
+      </visual>
+      <collision>
+        <!-- F -->
+        <origin xyz="-2.85 -3.075 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="5.67 1.32 0.025" />
+        </geometry>
+        <material name="material_cyan">
+          <color rgba="0.0 1.0 1.0 0.2" />
+        </material>
+      </collision>
+    </static_object>
+
+    <!-- EDGE PANELS -->
+    <!-- Edge panel back -->
+    <static_object name="panelBM">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <origin xyz="-10.35 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="9.3 7.5 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-10.35 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="9.3 4.8 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </collision>
+    </static_object>
+
+    <!-- Edge panel front -->
+    <static_object name="panelFM">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <origin xyz="8.4 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="13.2 7.5 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="8.4 0.0 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="13.2 4.8 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelL">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <origin xyz="-1.95 -9.375 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="7.5 11.25 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-1.95 -9.375 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="7.5 11.25 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </collision>
+    </static_object>
+
+    <static_object name="panelR">
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <visual>
+        <origin xyz="-1.95 9.375 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="7.5 11.25 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="-1.95 9.375 -0.02" rpy="0 0 0" />
+        <geometry>
+            <box size="7.5 11.25 0.025" />
+        </geometry>
+        <material name="material_blue">
+          <color rgba="0.0 0.0 0.5 0.5" />
+        </material>
+      </collision>
+    </static_object>
+
+
+    <!-- <static_object name = "joint">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <visual>
+            <origin xyz="0.0 0.0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="8.0 8.0 0.1" />
+                <mesh filename="./resources/../../../model/Joints2/Joints2.obj" scale="1.0 1.0 1.0"/>
+            </geometry>
+        </visual>
+        <visual>
+          <origin xyz="-1.95 0.0 -0.02" rpy="0 0 0" />
+          <geometry>
+              <box size="7.5 7.5 0.025" />
+          </geometry>
+        </visual>
+
+        <collision>
+            <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+            <geometry>
+        	      <box size="8.0 8.0 0.1" />
+                <mesh filename="./resources/../../../model/Joints2/Joints2.obj" scale="1.0 1.0 1.0"/>
+            </geometry>
+        </collision>
+        <collision>
+          <origin xyz="0.0 0.0 -0.1" rpy="0 0 0" />
+          <geometry>
+              <box size="7.5 7.5 0.05" />
+          </geometry>
+        </collision>
+    </static_object> -->
+
+	<light name="light1" type="directional">
+        <position xyz="2.0 -2.0 2.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light2" type="directional">
+        <position xyz="2.0 2.0 2.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+
+    <!-- <light name="light1" type="directional">
+        <position xyz="2.0 -2.0 4.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light2" type="directional">
+        <position xyz="2.0 2.0 4.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light3" type="directional">
+        <position xyz="-2.0 -2.0 1.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <light name="light4" type="directional">
+        <position xyz="-2.0 2.0 1.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light> -->
+
+    <camera name="camera_fixed">
+        <position xyz="2.0 0.0 1.0" />
+        <vertical xyz="0.0 0.0 1.0" />
+        <lookat xyz="0.0 0.0 0.5" />
+    </camera>
+
+</world>
