@@ -15,7 +15,7 @@ This repo will be used to explore haptics for Human-Robot Collaboration in Const
       
    - You can find/add new tools, worlds and robot designs as urdf files in the "models" folder
    
-# 1. Construction task folders
+# 1. Construction Tasks 
 Controllers, worlds and simulations for 3 construction tasks: bolting, joint connection, and welding
 
 ## bolting_one_arm_CS225a: 
@@ -31,11 +31,15 @@ Construction project from CS225a Experimental Robotics Spring 2019-20. The team 
 - Task description: Find joints between concrete slabs and pour material to seal them together 
 - World: the file world.urdf uses joint_robot.urdf which has a holonomic mobile base and a 1 dof tool
 - Notes: Goldbeck has a preference for a robot design that's specific to this task instead of the regular Panda arm solution
-- To run the code:  
+- To run the code (manually):  
   1) From the CIFEseed/build directory: cmake .. && make -j4 
   2) From any directory in a tab of its own: redis-server
-  3) From CIFEseed/bin/joint: cd ../../bin/joint && ./simviz_joint  
-  4) From CIFEseed/bin/joint in another tab: cd ../../bin/joint && ./controller_joint
+  3) From CIFEseed/bin/joint_autonomous: cd ../../bin/joint && ./simviz_joint  
+  4) From CIFEseed/bin/joint_autonomous in another tab: cd ../../bin/joint && ./controller_joint
+- Alternatively, you can run the code using the clean_build and launch scripts: 
+  1) From CIFEseed: ./clean_build
+  2) From any directory in a tab of its own: redis-server 
+  3) From CIFEseed/bin/joint_autonomous: ./launch
 
 ## joint_haptics:
 - Haptic feature: the user can intervene through haptic teleoperation (which allows them to feel the joint) and when they are done, resume and continue the autonomous task.
