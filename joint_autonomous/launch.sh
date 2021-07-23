@@ -4,7 +4,7 @@ if [ ! "$BASH_VERSION" ] ; then
 fi
 
 # launch simulation first
-./simviz &
+./simviz_joint_autonomous &
 SIMVIZ_PID=$!
 
 # trap ctrl-c and call ctrl_c()
@@ -17,7 +17,7 @@ function ctrl_c() {
 sleep 2
 
 # launch controller
-./controller &
+./controller_joint_autonomous &
 CONTROLLER_PID=$!
 
 sleep 1
