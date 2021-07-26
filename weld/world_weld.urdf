@@ -142,6 +142,11 @@
         <lookat xyz="0.0 0.0 0.0" />
     </light>
 
+     <light name="light3" type="directional">
+        <position xyz="-2.0 2.0 2.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
 
     <!-- <light name="light1" type="directional">
         <position xyz="2.0 -2.0 4.0" />

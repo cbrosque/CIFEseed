@@ -6,6 +6,18 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 import time
 
+SMALL_SIZE = 7
+MEDIUM_SIZE = 10
+BIGGER_SIZE = 12
+
+plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+plt.rc('legend', fontsize=MEDIUM_SIZE)    # legend fontsize
+plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
+
 r = redis.Redis(host='127.0.0.1',port=6379)
 
 value = r.get('sai2::optoforceSensor::6Dsensor::force')
@@ -23,7 +35,8 @@ force_x2 = []
 force_y2 = []
 force_z2 = []
 
-figure, (ax1,ax2,ax3) = plt.subplots(3,1,figsize=(8,6))
+figure, (ax1,ax2,ax3) = plt.subplots(3,1,figsize=(7,9))
+plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=1.2, hspace=None)
 line_force_x, = ax1.plot(t, force_x, label='force x')
 line_force_y, = ax1.plot(t, force_y, label='force y')
 line_force_z, = ax1.plot(t, force_z, label='force z')
@@ -36,22 +49,18 @@ line_force_x2, = ax3.plot(t, force_x2, label='force x')
 line_force_y2, = ax3.plot(t, force_y2, label='force y')
 line_force_z2, = ax3.plot(t, force_z2, label='force z')
 
-ax1.set_xlabel('time')
 ax1.set_ylabel('force')
-ax1.title.set_text('Force Received')
+ax1.title.set_text('Force Received from Robot Force Torque Sensor')
 ax1.legend(loc=3)
 
-ax2.set_xlabel('time')
 ax2.set_ylabel('moment')
-ax2.title.set_text('Moment Received')
+ax2.title.set_text('Force Received from Robot Force Torque Sensor')
 ax2.legend(loc=3)
 
 ax3.set_xlabel('time')
 ax3.set_ylabel('force')
-ax3.title.set_text('Force Exerted')
+ax3.title.set_text('Force Exerted as Haptic Feedback')
 ax3.legend(loc=3)
-
-figure.suptitle("Real Time Haptic Feedback")
 
 def func_animate(i):
     value = r.get('sai2::optoforceSensor::6Dsensor::force')

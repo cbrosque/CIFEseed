@@ -137,8 +137,20 @@ int main() {
 	handler = new chai3d::cHapticDeviceHandler();
 	handler->getDevice(hapticDevice, 0);
 	cout << "hapticdevice" << hapticDevice << endl;
-	hapticDevice->open();
-	hapticDevice->calibrate();
+	if (NULL == hapticDevice)
+	{
+		cout << "No haptic device found. " << endl;
+	}
+	if(!hapticDevice->open())
+	{
+		cout << "could not open the haptic device" << endl;
+	}
+	if(!hapticDevice->calibrate())
+	{
+		cout << "could not calibrate the haptic device" << endl;
+	}
+	// hapticDevice->open();
+	// hapticDevice->calibrate();
 
 
 	tool = new chai3d::cToolGripper(graphics->_world);
