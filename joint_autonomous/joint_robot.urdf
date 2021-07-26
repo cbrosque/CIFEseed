@@ -37,7 +37,8 @@
     </inertial>
     <visual>
       <geometry>
-        <mesh filename="../../../model/jointcart2/jointcart2_wheeled.obj" />
+        <!-- <mesh filename="../../../model/jointcart2/jointcart2_wheeled.obj" /> -->
+        <mesh filename="../../../model/jointcart_fetch/jointcart_fetch.obj" />
       </geometry>
     </visual>
   </link>

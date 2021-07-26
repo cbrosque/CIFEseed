@@ -180,8 +180,7 @@ int main() {
 	Eigen::Affine3d transform_sensor = Eigen::Affine3d::Identity();
 	transform_sensor(2,2) = -1.0;
 	transform_sensor.translation() = sensor_pos_in_link;
-	cout << "RUTA ";
-	cout << transform_sensor(2,2);
+	// cout << transform_sensor(2,2);
 	force_sensor = new ForceSensorSim(robot_name, "linkTool", transform_sensor, robot);
 	graphics->showLinkFrame(true, robot_name, "linkTool", 0.15);
 
@@ -429,8 +428,8 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 
     	Eigen::VectorXd sensed_force_and_moment_EE_Frame(6);
 		sensed_force_and_moment_EE_Frame << sensed_force, sensed_moment;
-		cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
-		cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
+		// cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
+		// cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
 
 		// Handle sphere updates
 		redis_client.getEigenMatrixDerived(NOZZLE_POS_KEY, nozzle_pos_vec);
