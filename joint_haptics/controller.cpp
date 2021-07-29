@@ -70,6 +70,7 @@ int main() {
 	// added force sensor
 	const std::string EE_FORCE_KEY = "cs225a::sensor::force";
 	const std::string EE_MOMENT_KEY = "cs225a::sensor::moment";
+	const std::string BASE_POSE_KEY = "base_pose";
 
 	// Add state tracking for simulation
 	const std::string ACTIVE_STATE_KEY = "active_state";
@@ -94,6 +95,7 @@ int main() {
 	// load force sensor
 	Eigen::Vector3d sensed_force;
 	Eigen::Vector3d sensed_moment;
+	Eigen::Vector3d base_pose_vec;
 	sensed_force = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
 	sensed_moment = redis_client.getEigenMatrixJSON(EE_MOMENT_KEY);
 
@@ -212,9 +214,12 @@ int main() {
 		// 	cout << endl;
 		// 	cout << "counter: " << controller_counter << "\n";
 		// }
-
+		
+		base_pose_vec = Vector3d (robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), initial_q(3));
+		redis_client.setEigenMatrixJSON(BASE_POSE_KEY, base_pose_vec);
+		
 		// Update position of sphere
-		nozzle_pos_vec = Vector3d(robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), robot->_q(3));
+		nozzle_pos_vec = Vector3d(robot->_q(0)-initial_q(0), robot->_q(1)-initial_q(1), 0);
 		if (nozzle_pos == 1) {
 			// std::cout << "Nozzle is down" << std::endl;
 			Vector3d newNozzlePos = Vector3d(nozzle_pos_vec(0), nozzle_pos_vec(1), -6);

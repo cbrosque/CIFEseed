@@ -44,6 +44,7 @@ const std::string HAPTIC_VELOCITY_KEY = "hAPTIC_VELOCITY";
 const std::string HAPTIC_FORCE_KEY = "Haptic_FORCE";
 const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
 const std::string HAPTIC_INFO_KEY = "Haptic_INFO";
+const std::string BASE_POSE_KEY = "base_pose";
 
 // For the sphere
 const std::string ACTIVE_STATE_KEY = "active_state";
@@ -71,6 +72,9 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods);
 
 // Pouring indicator - sphere
 chai3d::cShapeSphere* sphere0;
+
+// State indicator - sphere
+chai3d::cShapeSphere* sphere1;
 
 // flags for scene camera movement
 bool fTransXp = false;
@@ -144,6 +148,19 @@ int main() {
 	sim->getJointPositions("mmp_panda", robot->_q);
 	sim->getJointVelocities("mmp_panda", robot->_dq);
 	robot->updateKinematics();
+
+	//Sphere
+	sphere1 = new chai3d::cShapeSphere(0.05);
+    graphics->_world->addChild(sphere1);
+
+    // set position
+    sphere1->setLocalPos(1, 0, 2);
+    
+    // set material color
+    sphere1->m_material->setBlueCyan();
+
+    // create haptic effect and set properties
+    sphere1->createEffectSurface();
 
 	//Haptic Devices
 	handler = new chai3d::cHapticDeviceHandler();
@@ -353,7 +370,7 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 	int dof = robot->dof();
 	VectorXd command_torques = VectorXd::Zero(dof);
 	redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
-
+	redis_client.setEigenMatrixDerived(BASE_POSE_KEY, Vector3d(0,0,0));
 	// setup redis client data container for pipeset (batch write)
 	std::vector<std::pair<std::string, std::string>> redis_data(2);  // set with the number of keys to write
 
@@ -396,6 +413,18 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		redis_client.getEigenMatrixDerived(HAPTIC_MOMENT_KEY, hapticmoment);
 		moment_field = chai3d::cVector3d(hapticmoment);
 
+		redis_client.getEigenMatrixDerived(BASE_POSE_KEY, base_pose_vec);
+		sphere1->setLocalPos(0+base_pose_vec(0),0+base_pose_vec(1), 0.9);
+		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+		if (activeStateString == "HAPTICS")
+		{
+			sphere1->m_material->setGreenLawn();
+		}
+		else
+		{
+			sphere1->m_material->setBlueCyan();
+		}
+
 		hapticDevice->setForceAndTorqueAndGripperForce(force_field, moment_field, 0);
 		// get gravity torques
 		robot->gravityVector(g);
@@ -428,8 +457,8 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 
     	Eigen::VectorXd sensed_force_and_moment_EE_Frame(6);
 		sensed_force_and_moment_EE_Frame << sensed_force, sensed_moment;
-		// cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
-		// cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
+		cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
+		cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
 
 		// Handle sphere updates
 		redis_client.getEigenMatrixDerived(NOZZLE_POS_KEY, nozzle_pos_vec);
