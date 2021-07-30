@@ -150,7 +150,7 @@ int main() {
 	robot->updateKinematics();
 
 	//Sphere
-	sphere1 = new chai3d::cShapeSphere(0.05);
+	sphere1 = new chai3d::cShapeSphere(0.035);
     graphics->_world->addChild(sphere1);
 
     // set position
@@ -416,6 +416,7 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		redis_client.getEigenMatrixDerived(BASE_POSE_KEY, base_pose_vec);
 		sphere1->setLocalPos(0+base_pose_vec(0),0+base_pose_vec(1), 0.9);
 		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+		
 		if (activeStateString == "HAPTICS")
 		{
 			sphere1->m_material->setGreenLawn();
@@ -457,8 +458,8 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 
     	Eigen::VectorXd sensed_force_and_moment_EE_Frame(6);
 		sensed_force_and_moment_EE_Frame << sensed_force, sensed_moment;
-		cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
-		cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
+		// cout << "force" << sensed_force(0) << "," << sensed_force(1) << "," << sensed_force(2) << endl;
+		// cout << "moment" << sensed_moment(0) << "," << sensed_moment(1) << "," << sensed_moment(2) << endl;
 
 		// Handle sphere updates
 		redis_client.getEigenMatrixDerived(NOZZLE_POS_KEY, nozzle_pos_vec);
