@@ -23,15 +23,25 @@
       </collision>
     </static_object>
 
-    <static_object name = "picture">
+    <static_object name = "picture_back">
       <origin xyz="-5.0 0.0 -0.04" rpy="0 0 0" />
       <visual>
-      <origin xyz="-3.0 0.0 -0.04" rpy="0 0 0" />  
+      <origin xyz="-2.5 0.0 -0.04" rpy="0 0 0" />
         <geometry>
             <mesh filename="./resources/../../../model/weld/wall.obj" scale="3.0 3.0 3.0"/>
         </geometry>
       </visual>
-      </static_object>
+    </static_object>
+
+    <static_object name = "picture_front">
+      <origin xyz="5.0 0.0 -0.04" rpy="0 0 0" />
+      <visual>
+      <origin xyz="2.5 0.0 -0.04" rpy="0 0 0" />
+        <geometry>
+            <mesh filename="./resources/../../../model/weld/wall.obj" scale="3.0 3.0 3.0"/>
+        </geometry>
+      </visual>
+    </static_object>
 
     <!--<static_object name="Floor">
         <origin xyz="0.0 0.0 -0.05" rpy="0 0 0" />
