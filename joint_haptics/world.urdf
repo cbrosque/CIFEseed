@@ -52,8 +52,8 @@
             <box size="30 30 0.025" />
             <!-- <box size="7.5 7.5 0.025" /> -->
         </geometry>
-        <material name="material_purple">
-          <color rgba="1.0 0 1.0 1.0" />
+        <material name="material_grey">
+          <color rgba="0.46 0.47 0.47 1.0" />
         </material>
       </visual>
       <collision>
@@ -74,8 +74,8 @@
         <geometry>
             <box size="5.67 4.77 0.025" />
         </geometry>
-        <material name="material_yellow">
-          <color rgba="1.0 1.0 0.0 0.2" />
+        <material name="material_brown">
+          <color rgba="0.68 0.56 0.37 0.2" />
         </material>
       </visual>
       <collision>
@@ -84,8 +84,8 @@
         <geometry>
             <box size="5.67 4.77 0.025" />
         </geometry>
-        <material name="material_yellow">
-          <color rgba="1.0 1.0 0.0 0.2" />
+        <material name="material_brown">
+          <color rgba="0.68 0.56 0.37 0.2" />
         </material>
       </collision>
     </static_object>
@@ -98,8 +98,8 @@
         <geometry>
             <box size="1.77 4.77 0.025" />
         </geometry>
-        <material name="material_cyan">
-          <color rgba="0.0 1.0 1.0 0.2" />
+        <material name="material_caramel">
+          <color rgba="0.79 0.61 0.46 0.2" />
         </material>
       </visual>
       <collision>
@@ -108,8 +108,8 @@
         <geometry>
             <box size="1.77 4.77 0.025" />
         </geometry>
-        <material name="material_cyan">
-          <color rgba="0.0 1.0 1.0 0.2" />
+        <material name="material_caramel">
+          <color rgba="0.79 0.61 0.46 0.2" />
         </material>
       </collision>
     </static_object>
@@ -122,8 +122,8 @@
         <geometry>
             <box size="1.77 1.32 0.025" />
         </geometry>
-        <material name="material_yellow">
-          <color rgba="1.0 1.0 0.0 0.2" />
+        <material name="material_brown">
+          <color rgba="0.68 0.56 0.37 0.2" />
         </material>
       </visual>
       <collision>
@@ -132,8 +132,8 @@
         <geometry>
             <box size="1.77 1.32 0.025" />
         </geometry>
-        <material name="material_yellow">
-          <color rgba="1.0 1.0 0.0 0.2" />
+        <material name="material_brown">
+          <color rgba="0.68 0.56 0.37 0.2" />
         </material>
       </collision>
     </static_object>
@@ -146,8 +146,8 @@
         <geometry>
             <box size="5.67 1.32 0.025" />
         </geometry>
-        <material name="material_cyan">
-          <color rgba="0.0 1.0 1.0 0.2" />
+        <material name="material_caramel">
+          <color rgba="0.79 0.61 0.46 0.2" />
         </material>
       </visual>
       <collision>
@@ -156,8 +156,8 @@
         <geometry>
             <box size="5.67 1.32 0.025" />
         </geometry>
-        <material name="material_cyan">
-          <color rgba="0.0 1.0 1.0 0.2" />
+        <material name="material_caramel">
+          <color rgba="0.79 0.61 0.46 0.2" />
         </material>
       </collision>
     </static_object>
@@ -170,8 +170,8 @@
         <geometry>
             <box size="1.77 1.32 0.025" />
         </geometry>
-        <material name="material_yellow">
-          <color rgba="1.0 1.0 0.0 0.2" />
+        <material name="material_brown">
+          <color rgba="0.68 0.56 0.37 0.2" />
         </material>
       </visual>
       <collision>
@@ -180,8 +180,8 @@
         <geometry>
             <box size="1.77 1.32 0.025" />
         </geometry>
-        <material name="material_yellow">
-          <color rgba="1.0 1.0 0.0 0.2" />
+        <material name="material_brown">
+          <color rgba="0.68 0.56 0.37 0.2" />
         </material>
       </collision>
     </static_object>
@@ -194,8 +194,8 @@
         <geometry>
             <box size="5.67 1.32 0.025" />
         </geometry>
-        <material name="material_cyan">
-          <color rgba="0.0 1.0 1.0 0.2" />
+        <material name="material_caramel">
+          <color rgba="0.79 0.61 0.46 0.2" />
         </material>
       </visual>
       <collision>
@@ -204,8 +204,8 @@
         <geometry>
             <box size="5.67 1.32 0.025" />
         </geometry>
-        <material name="material_cyan">
-          <color rgba="0.0 1.0 1.0 0.2" />
+        <material name="material_caramel">
+          <color rgba="0.79 0.61 0.46 0.2" />
         </material>
       </collision>
     </static_object>
@@ -219,8 +219,8 @@
         <geometry>
             <box size="9.3 7.5 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </visual>
       <collision>
@@ -228,8 +228,8 @@
         <geometry>
             <box size="9.3 4.8 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </collision>
     </static_object>
@@ -242,8 +242,8 @@
         <geometry>
             <box size="13.2 7.5 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </visual>
       <collision>
@@ -251,8 +251,8 @@
         <geometry>
             <box size="13.2 4.8 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </collision>
     </static_object>
@@ -264,8 +264,8 @@
         <geometry>
             <box size="7.5 11.25 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </visual>
       <collision>
@@ -273,8 +273,8 @@
         <geometry>
             <box size="7.5 11.25 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </collision>
     </static_object>
@@ -286,8 +286,8 @@
         <geometry>
             <box size="7.5 11.25 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </visual>
       <collision>
@@ -295,8 +295,8 @@
         <geometry>
             <box size="7.5 11.25 0.025" />
         </geometry>
-        <material name="material_blue">
-          <color rgba="0.0 0.0 0.5 0.5" />
+        <material name="material_lightgrey">
+          <color rgba="0.7 0.69 0.67 0.2" />
         </material>
       </collision>
     </static_object>
