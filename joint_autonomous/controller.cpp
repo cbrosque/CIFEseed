@@ -12,6 +12,7 @@
 #include "force_sensor/ForceSensorDisplay.h"
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include <signal.h>
@@ -77,6 +78,12 @@ int main() {
 	// start redis client
 	auto redis_client = RedisClient();
 	redis_client.connect();
+
+	// output force sensor values
+	ofstream force_outputs;
+	force_outputs.open("../../force_outputs.txt");
+	ofstream moment_outputs;
+	moment_outputs.open("../../moment_outputs.txt");
 
 	// set up signal handler
 	signal(SIGABRT, &sighandler);
@@ -228,6 +235,13 @@ int main() {
 												 -0,075;
 		sensed_force = sensed_force + contact_translation;
 
+		sensed_moment = redis_client.getEigenMatrixJSON(EE_FORCE_KEY);
+		// Write force and moment to files
+		if (controller_counter % 5 == 0) {
+			force_outputs << sensed_force << "\n\n";
+			moment_outputs << robot->_q << "\n\n";
+		}
+
 
 		// cout << abs(sensed_force(2)) << "\n";
 		// if (abs(sensed_force(0)) > 0.0 || abs(sensed_force(1)) > 0.0 || abs(sensed_force(2)) > 0.0) {
@@ -352,6 +366,10 @@ int main() {
 
 		controller_counter++;
 	}
+
+	// close files
+	force_outputs.close();
+	moment_outputs.close();
 
 	double end_time = timer.elapsedTime();
 	std::cout << "\n";

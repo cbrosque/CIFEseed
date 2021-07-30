@@ -13,6 +13,11 @@ data_moment = np.loadtxt(moment_file ,skiprows=0)
 data_force = np.reshape(data_force, (-1, 3))
 data_moment = np.reshape(data_moment, (-1, 4))
 
+# Hack to get rid of the spike in force
+data_force[31209][0] = 0.005
+data_force[31209][1] = 0.0
+data_force[31209][2] = 0.0
+
 time_force = np.arange(np.shape(data_force)[0])
 time_moment = np.arange(np.shape(data_moment)[0])
 
