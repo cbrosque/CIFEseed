@@ -72,6 +72,7 @@ void mouseClick(GLFWwindow* window, int button, int action, int mods);
 
 // Pouring indicator - sphere
 chai3d::cShapeSphere* sphere0;
+bool pouringFlag = false;
 
 // State indicator - sphere
 chai3d::cShapeSphere* sphere1;
@@ -131,12 +132,14 @@ int main() {
 	//robot->_q(0) = -0.8;
 	robot->updateModel();
 
+	if (pouringFlag){
 	// Initialize sphere
 	sphere0 = new chai3d::cShapeSphere(0.025);
 	graphics->_world->addChild(sphere0);
 	sphere0->setLocalPos(0.0, 0.0, 0.0);
 	sphere0->m_material->setGreenLime();
 	sphere0->createEffectSurface();
+	}
 
 	// load simulation world
 	auto sim = new Simulation::Sai2Simulation(world_file, false);
@@ -463,24 +466,16 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 
 		// Handle sphere updates
 		redis_client.getEigenMatrixDerived(NOZZLE_POS_KEY, nozzle_pos_vec);
+		if(pouringFlag){
 		sphere0->setLocalPos(nozzle_pos_vec(0), nozzle_pos_vec(1), nozzle_pos_vec(2));
 		// std::cout << "Nozzle pos vec = " << nozzle_pos_vec(3) << std::endl;
-		if (nozzle_pos_vec(3) < 0) {
-			// std::cout << "Setting sphere to red" << std::endl;
-			sphere0->m_material->setRed();
-		} else {
-			sphere0->m_material->setGreenLime();
+			if (nozzle_pos_vec(3) < 0) {
+				// std::cout << "Setting sphere to red" << std::endl;
+				sphere0->m_material->setRed();
+			} else {
+				sphere0->m_material->setGreenLime();
+			}
 		}
-		// try {
-		// 	string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
-		// 	if (activeStateString == "POURING") {
-		// 		sphere0->m_material->setGreenLawn();
-		// 	} else {
-		// 		sphere0->m_material->setBlueCyan();
-		// 	}
-		// } catch (int e) {
-		// 	std::cout << "Error: " << e << std::endl;
-		// }
 
 		// write new robot state to redis
 		redis_client.setEigenMatrixJSON(JOINT_ANGLES_KEY, robot->_q);
