@@ -28,6 +28,7 @@ const string obj_file = "mmp_panda_tool_no_collision.urdf";
 const string robot_name = "mmp_panda";
 const string camera_name = "camera_fixed";
 const string control_link = "linkTool";
+
 // redis keys:
 // - write:
 const std::string JOINT_ANGLES_KEY = "sai2::cs225a::robot::mmp_panda::sensors::q";
@@ -37,7 +38,7 @@ const std::string JOINT_TORQUES_COMMANDED_KEY = "sai2::cs225a::robot::mmp_panda:
 
 const std::string HAPTIC_POS_KEY = "Haptic_POS";
 const std::string HAPTIC_ORIENTATION_KEY = "Haptic_ORIENTATION";
-const std::string HAPTIC_VELOCITY_KEY = "hAPTIC_VELOCITY";
+const std::string HAPTIC_VELOCITY_KEY = "Haptic_VELOCITY";
 const std::string HAPTIC_FORCE_KEY = "Haptic_FORCE";
 const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
 const std::string HAPTIC_SWITCH_KEY = "Haptic_SWITCH";
@@ -172,8 +173,8 @@ int main() {
 	double maxLinearDamping = hapticDeviceInfo.m_maxLinearDamping;
 	Eigen::Vector2d stiffness_AND_damping;
 	stiffness_AND_damping(0) = maxLinearStiffness;
-	stiffness_AND_damping(1) = maxLinearDamping;
 	redis_client.setEigenMatrixDerived(HAPTIC_INFO_KEY, stiffness_AND_damping);
+	stiffness_AND_damping(1) = maxLinearDamping;
 	hapticDevice->setEnableGripperUserSwitch(true);
 
 	force_sensor = new ForceSensorSim(robot_name, control_link, Eigen::Affine3d::Identity(), robot);
@@ -376,6 +377,7 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 	redis_client.setEigenMatrixDerived(HAPTIC_FORCE_KEY, hapticforce);
 	redis_client.setEigenMatrixDerived(HAPTIC_MOMENT_KEY, hapticmoment);
 	redis_client.setEigenMatrixDerived(BASE_POSE_KEY, Vector3d(0,0,0));
+	redis_client.set(ACTIVE_STATE_KEY, "AUTO_1");
 
 	// create a timer
 	LoopTimer timer;
@@ -428,6 +430,7 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 		sphere0->setLocalPos(-3.4+base_pose_vec(0),2.3+base_pose_vec(1), 0.2+base_pose_vec(2));
 		//sphere0->setLocalPos(-2.75, 2.402, 0.02);
 		string activeStateString = redis_client.get(ACTIVE_STATE_KEY);
+
 		if (activeStateString == "HAPTICS")
 		{
 			sphere0->m_material->setGreenLawn();

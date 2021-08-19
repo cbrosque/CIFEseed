@@ -40,7 +40,7 @@ std::string ROBOT_GRAVITY_KEY;
 
 const std::string HAPTIC_POS_KEY = "Haptic_POS";
 const std::string HAPTIC_ORIENTATION_KEY = "Haptic_ORIENTATION";
-const std::string HAPTIC_VELOCITY_KEY = "hAPTIC_VELOCITY";
+const std::string HAPTIC_VELOCITY_KEY = "Haptic_VELOCITY";
 const std::string HAPTIC_FORCE_KEY = "Haptic_FORCE";
 const std::string HAPTIC_MOMENT_KEY = "Haptic_MOMENT";
 const std::string HAPTIC_SWITCH_KEY = "Haptic_SWITCH";
