@@ -1,5 +1,8 @@
 # CIFEseed
-This repo will be used to explore haptics for Human-Robot Collaboration in Construction
+This project explores haptics for Human-Robot Collaboration in construction
+
+## How to build and run this project:
+More details for each of the tasks can be found in the "Construction Tasks" section of the Readme.
   - For running the tasks (from the main directory): 
       ```
       mkdir build
@@ -14,6 +17,7 @@ This repo will be used to explore haptics for Human-Robot Collaboration in Const
       Remember to first run ./simviz_gui and ./controller_gui from the bin/gui-construction directory
       
    - You can find/add new tools, worlds and robot designs as urdf files in the "models" folder
+   - This project uses SAI-2.0 to create the robotic simulations. 
    
 # 1. Construction Tasks 
 Controllers, worlds and simulations for 3 construction tasks: bolting, joint connection, and welding
@@ -28,7 +32,7 @@ Construction project from CS225a Experimental Robotics Spring 2019-20. The team 
 - World: 2 fixed base Panda robot arms
    
 ## joint_autonomous:
-- Demo video: 
+<!-- - Demo video:  -->
 - Task description: Find joints between concrete slabs and pour material to seal them together 
 - World: the file world.urdf uses joint_robot.urdf which has a holonomic mobile base and a 1 dof tool
 - Notes: Goldbeck has a preference for a robot design that's specific to this task instead of the regular Panda arm solution
@@ -43,7 +47,7 @@ Construction project from CS225a Experimental Robotics Spring 2019-20. The team 
   3) From CIFEseed/bin/joint_autonomous: ```./launch```
 
 ## joint_haptics:
-- Demo video: 
+<!-- - Demo video:  -->
 - Haptic feature: the user can intervene through haptic teleoperation (which allows them to feel the joint) and when they are done, resume and continue the autonomous task.
 - To run the code:  
   1) From the CIFEseed/build directory: ```cmake .. && make -j4 ```
