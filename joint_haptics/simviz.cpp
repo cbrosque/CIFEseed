@@ -374,6 +374,7 @@ void simulation(Sai2Model::Sai2Model* robot, Simulation::Sai2Simulation* sim, UI
 	VectorXd command_torques = VectorXd::Zero(dof);
 	redis_client.setEigenMatrixJSON(JOINT_TORQUES_COMMANDED_KEY, command_torques);
 	redis_client.setEigenMatrixDerived(BASE_POSE_KEY, Vector3d(0,0,0));
+	redis_client.set(ACTIVE_STATE_KEY, "INITIAL");
 	// setup redis client data container for pipeset (batch write)
 	std::vector<std::pair<std::string, std::string>> redis_data(2);  // set with the number of keys to write
 
